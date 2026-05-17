@@ -96,3 +96,65 @@ ipcMain.handle('organize-files', async () => {
     return { success: false, message: `整理中にエラーが発生しました: ${error.message}` };
   }
 });
+
+ipcMain.handle('classify-folders', async () => {
+  try {
+    const desktopPath = app.getPath('desktop');
+    const items = fs.readdirSync(desktopPath);
+    let movedCount = 0;
+
+    for (const item of items) {
+      const fullPath = path.join(desktopPath, item);
+      const stats = fs.statSync(fullPath);
+
+      // We only care about directories, and skip our own "◇" category folders
+      if (stats.isDirectory() && !item.startsWith('◇')) {
+        const subItems = fs.readdirSync(fullPath);
+        const exts = new Set();
+
+        // Recursively or just shallow scan? Shallow scan seems enough for classification.
+        for (const subItem of subItems) {
+          const subFullPath = path.join(fullPath, subItem);
+          const subStats = fs.statSync(subFullPath);
+          if (subStats.isFile()) {
+            exts.add(path.extname(subItem).toLowerCase());
+          }
+        }
+
+        let category = '◇NoCategories';
+
+        const hasHtml = exts.has('.html') || exts.has('.htm');
+        const hasCss = exts.has('.css');
+        const hasJs = exts.has('.js');
+        const hasXlsx = exts.has('.xlsx') || exts.has('.xls');
+        const hasPng = exts.has('.png');
+        const hasTxt = exts.has('.txt');
+
+        if (hasHtml || hasCss || hasJs) {
+          category = '◇WebProject';
+        } else if (hasXlsx && hasPng) {
+          category = '◇ProjectWorking';
+        } else if (hasTxt && exts.size === 1) {
+          category = '◇Memo';
+        }
+
+        const targetFolder = path.join(desktopPath, category);
+        if (!fs.existsSync(targetFolder)) {
+          fs.mkdirSync(targetFolder);
+        }
+
+        const targetPath = path.join(targetFolder, item);
+        let finalTargetPath = targetPath;
+        if (fs.existsSync(targetPath)) {
+          finalTargetPath = path.join(targetFolder, `${item}_${Date.now()}`);
+        }
+
+        fs.renameSync(fullPath, finalTargetPath);
+        movedCount++;
+      }
+    }
+    return { success: true, message: `${movedCount}個のフォルダを分類しました。` };
+  } catch (error) {
+    return { success: false, message: `分類中にエラーが発生しました: ${error.message}` };
+  }
+});
