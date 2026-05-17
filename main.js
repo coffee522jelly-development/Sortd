@@ -1,8 +1,11 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 function createWindow() {
+  // Remove default menu
+  Menu.setApplicationMenu(null);
+
   const win = new BrowserWindow({
     width: 800,
     height: 600,
