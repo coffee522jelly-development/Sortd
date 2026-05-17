@@ -7,9 +7,10 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win"
+    "build": "electron-builder build --win --nsis"
   },
   "build": {
+    "productName": "DesktopOrganizer",
     "appId": "com.example.desktop-organizer",
     "win": {
       "target": [
