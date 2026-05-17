@@ -123,18 +123,31 @@ ipcMain.handle('classify-folders', async () => {
 
         let category = '◇NoCategories';
 
-        const hasHtml = exts.has('.html') || exts.has('.htm');
-        const hasCss = exts.has('.css');
-        const hasJs = exts.has('.js');
-        const hasXlsx = exts.has('.xlsx') || exts.has('.xls');
-        const hasPng = exts.has('.png');
-        const hasTxt = exts.has('.txt');
+        // Define extension groups
+        const webExts = ['.html', '.htm', '.css', '.js', '.ts', '.jsx', '.tsx', '.php', '.vue', '.scss'];
+        const unityExts = ['.unity', '.prefab', '.asset'];
+        const pythonExts = ['.py', '.ipynb'];
+        const designExts = ['.psd', '.ai', '.xd', '.fig', '.sketch'];
+        const docExts = ['.docx', '.pptx', '.pdf', '.csv'];
+        const progExts = ['.c', '.cpp', '.h', '.hpp', '.cs', '.java', '.go', '.rs', '.rb'];
 
-        if (hasHtml || hasCss || hasJs) {
+        const hasExt = (list) => list.some(e => exts.has(e));
+
+        if (hasExt(webExts)) {
           category = '◇WebProject';
-        } else if (hasXlsx && hasPng) {
+        } else if (hasExt(unityExts)) {
+          category = '◇UnityProject';
+        } else if (hasExt(pythonExts)) {
+          category = '◇PythonProject';
+        } else if (hasExt(designExts)) {
+          category = '◇DesignProject';
+        } else if (hasExt(docExts)) {
+          category = '◇DocumentProject';
+        } else if (hasExt(progExts)) {
+          category = '◇ProgrammingProject';
+        } else if ((exts.has('.xlsx') || exts.has('.xls')) && exts.has('.png')) {
           category = '◇ProjectWorking';
-        } else if (hasTxt && exts.size === 1) {
+        } else if (exts.has('.txt') && exts.size === 1) {
           category = '◇Memo';
         }
 
