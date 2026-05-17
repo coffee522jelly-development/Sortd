@@ -71,7 +71,7 @@ ipcMain.handle('organize-files', async () => {
           continue;
         }
 
-        const folderName = ext ? ext.slice(1) : 'no_extension';
+        const folderName = ext ? `◇${ext.slice(1).toUpperCase()}` : '◇NO_EXTENSION';
         const targetFolder = path.join(desktopPath, folderName);
 
         if (!fs.existsSync(targetFolder)) {
