@@ -1,16 +1,20 @@
 {
-  "name": "app",
+  "name": "desktop-organizer",
   "version": "1.0.0",
-  "description": "",
+  "description": "Desktop file and folder organization utility",
+  "author": "User",
+  "license": "ISC",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder --win"
   },
   "build": {
     "appId": "com.example.desktop-organizer",
     "win": {
-      "target": "nsis"
+      "target": [
+        "nsis"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -31,8 +35,6 @@
     "url": "git+https://github.com/coffee522jelly-development/Sortd.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/coffee522jelly-development/Sortd/issues"
