@@ -5,9 +5,22 @@ use std::collections::HashSet;
 use std::fs;
 use std::time::SystemTime;
 use tauri::Manager;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct FilePreview {
+    pub filename: String,
+    pub target_dir: String,
+}
+
+#[derive(Serialize)]
+pub struct FolderPreview {
+    pub folder_name: String,
+    pub category: String,
+}
 
 #[tauri::command]
-fn delete_new_folders() -> Result<String, String> {
+fn delete_new_folders() -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut deleted_count = 0;
 
@@ -24,11 +37,11 @@ fn delete_new_folders() -> Result<String, String> {
             }
         }
     }
-    Ok(format!("{}個のフォルダを削除しました。", deleted_count))
+    Ok(deleted_count)
 }
 
 #[tauri::command]
-fn get_organization_preview(prefix: String) -> Result<Vec<(String, String)>, String> {
+fn get_organization_preview(prefix: String) -> Result<Vec<FilePreview>, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut preview = Vec::new();
 
@@ -49,14 +62,17 @@ fn get_organization_preview(prefix: String) -> Result<Vec<(String, String)>, Str
             } else {
                 format!("{}{}", prefix, ext.to_uppercase())
             };
-            preview.push((file_name.to_string(), folder_name));
+            preview.push(FilePreview {
+                filename: file_name.to_string(),
+                target_dir: folder_name,
+            });
         }
     }
     Ok(preview)
 }
 
 #[tauri::command]
-fn organize_files(prefix: String) -> Result<String, String> {
+fn organize_files(prefix: String) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
@@ -67,7 +83,6 @@ fn organize_files(prefix: String) -> Result<String, String> {
         if path.is_file() {
             let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
 
-            // Skip shortcuts
             if ext == "lnk" || ext == "url" {
                 continue;
             }
@@ -101,11 +116,79 @@ fn organize_files(prefix: String) -> Result<String, String> {
             moved_count += 1;
         }
     }
-    Ok(format!("{}個のファイルを整理しました。", moved_count))
+    Ok(moved_count)
+}
+
+fn get_category_for_folder(path: &std::path::Path, prefix: &str) -> Result<String, String> {
+    let mut exts = HashSet::new();
+    let sub_entries = fs::read_dir(&path).map_err(|e| e.to_string())?;
+    for sub_entry in sub_entries {
+        let sub_entry = sub_entry.map_err(|e| e.to_string())?;
+        let sub_path = sub_entry.path();
+        if sub_path.is_file() {
+            if let Some(ext) = sub_path.extension().and_then(|e| e.to_str()) {
+                exts.insert(ext.to_lowercase());
+            }
+        }
+    }
+
+    let web_exts = ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"];
+    let unity_exts = ["unity", "prefab", "asset"];
+    let python_exts = ["py", "ipynb"];
+    let design_exts = ["psd", "ai", "xd", "fig", "sketch"];
+    let doc_exts = ["docx", "pptx", "pdf", "csv"];
+    let prog_exts = ["c", "cpp", "h", "hpp", "cs", "java", "go", "rs", "rb"];
+
+    let has_ext = |list: &[&str]| list.iter().any(|e| exts.contains(*e));
+
+    let category = if has_ext(&web_exts) {
+        format!("{}WebProject", prefix)
+    } else if has_ext(&unity_exts) {
+        format!("{}UnityProject", prefix)
+    } else if has_ext(&python_exts) {
+        format!("{}PythonProject", prefix)
+    } else if has_ext(&design_exts) {
+        format!("{}DesignProject", prefix)
+    } else if has_ext(&doc_exts) {
+        format!("{}DocumentProject", prefix)
+    } else if has_ext(&prog_exts) {
+        format!("{}ProgrammingProject", prefix)
+    } else if (exts.contains("xlsx") || exts.contains("xls")) && exts.contains("png") {
+        format!("{}ProjectWorking", prefix)
+    } else if exts.contains("txt") && exts.len() == 1 {
+        format!("{}Memo", prefix)
+    } else {
+        format!("{}NoCategories", prefix)
+    };
+    Ok(category)
 }
 
 #[tauri::command]
-fn classify_folders(prefix: String) -> Result<String, String> {
+fn get_classification_preview(prefix: String) -> Result<Vec<FolderPreview>, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
+    let mut preview = Vec::new();
+
+    let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.is_dir() {
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if name.starts_with(&prefix) {
+                continue;
+            }
+            let category = get_category_for_folder(&path, &prefix)?;
+            preview.push(FolderPreview {
+                folder_name: name.to_string(),
+                category,
+            });
+        }
+    }
+    Ok(preview)
+}
+
+#[tauri::command]
+fn classify_folders(prefix: String) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
@@ -119,47 +202,7 @@ fn classify_folders(prefix: String) -> Result<String, String> {
                 continue;
             }
 
-            let mut exts = HashSet::new();
-            let sub_entries = fs::read_dir(&path).map_err(|e| e.to_string())?;
-            for sub_entry in sub_entries {
-                let sub_entry = sub_entry.map_err(|e| e.to_string())?;
-                let sub_path = sub_entry.path();
-                if sub_path.is_file() {
-                    if let Some(ext) = sub_path.extension().and_then(|e| e.to_str()) {
-                        exts.insert(ext.to_lowercase());
-                    }
-                }
-            }
-
-            let web_exts = ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"];
-            let unity_exts = ["unity", "prefab", "asset"];
-            let python_exts = ["py", "ipynb"];
-            let design_exts = ["psd", "ai", "xd", "fig", "sketch"];
-            let doc_exts = ["docx", "pptx", "pdf", "csv"];
-            let prog_exts = ["c", "cpp", "h", "hpp", "cs", "java", "go", "rs", "rb"];
-
-            let has_ext = |list: &[&str]| list.iter().any(|e| exts.contains(*e));
-
-            let category = if has_ext(&web_exts) {
-                format!("{}WebProject", prefix)
-            } else if has_ext(&unity_exts) {
-                format!("{}UnityProject", prefix)
-            } else if has_ext(&python_exts) {
-                format!("{}PythonProject", prefix)
-            } else if has_ext(&design_exts) {
-                format!("{}DesignProject", prefix)
-            } else if has_ext(&doc_exts) {
-                format!("{}DocumentProject", prefix)
-            } else if has_ext(&prog_exts) {
-                format!("{}ProgrammingProject", prefix)
-            } else if (exts.contains("xlsx") || exts.contains("xls")) && exts.contains("png") {
-                format!("{}ProjectWorking", prefix)
-            } else if exts.contains("txt") && exts.len() == 1 {
-                format!("{}Memo", prefix)
-            } else {
-                format!("{}NoCategories", prefix)
-            };
-
+            let category = get_category_for_folder(&path, &prefix)?;
             let target_folder = desktop.join(category);
             if !target_folder.exists() {
                 fs::create_dir(&target_folder).map_err(|e| e.to_string())?;
@@ -175,7 +218,7 @@ fn classify_folders(prefix: String) -> Result<String, String> {
             moved_count += 1;
         }
     }
-    Ok(format!("{}個のフォルダを分類しました。", moved_count))
+    Ok(moved_count)
 }
 
 fn main() {
@@ -196,6 +239,7 @@ fn main() {
             delete_new_folders,
             get_organization_preview,
             organize_files,
+            get_classification_preview,
             classify_folders
         ])
         .run(tauri::generate_context!())

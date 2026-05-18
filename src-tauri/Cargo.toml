@@ -1,5 +1,5 @@
 [package]
-name = "desktop-organizer"
+name = "sortd"
 version = "1.0.1"
 description = "Desktop file and folder organization utility"
 authors = ["User"]

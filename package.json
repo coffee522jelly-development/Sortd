@@ -1,5 +1,5 @@
 {
-  "name": "desktop-organizer",
+  "name": "sortd",
   "version": "1.0.1",
   "description": "Desktop file and folder organization utility",
   "author": "User",
@@ -12,7 +12,11 @@
   },
   "devDependencies": {
     "@tauri-apps/api": "^2.11.0",
-    "@tauri-apps/cli": "^2.11.2"
+    "@tauri-apps/cli": "^2.11.2",
+    "autoprefixer": "^10.5.0",
+    "daisyui": "^5.5.19",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0"
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.7.1",

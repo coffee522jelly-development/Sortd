@@ -1,81 +1,94 @@
 const { invoke } = window.__TAURI__.core;
-const { isPermissionGranted, requestPermission, sendNotification } = window.__TAURI__.notification;
-const { ask, message } = window.__TAURI__.dialog;
+const { sendNotification } = window.__TAURI_PLUGIN_NOTIFICATION__;
+const { ask, message } = window.__TAURI_PLUGIN_DIALOG__;
 
-const prefixInput = document.getElementById('prefixInput');
 const deleteBtn = document.getElementById('deleteBtn');
 const organizeBtn = document.getElementById('organizeBtn');
 const classifyBtn = document.getElementById('classifyBtn');
 const statusDiv = document.getElementById('status');
+const prefixInput = document.getElementById('prefixInput');
 
-async function checkNotificationPermission() {
-  let permissionGranted = await isPermissionGranted();
-  if (!permissionGranted) {
-    const permission = await requestPermission();
-    permissionGranted = permission === 'granted';
-  }
-  return permissionGranted;
+function setStatus(msg) {
+  statusDiv.innerText = `ステータス: ${msg}`;
+  console.log(msg);
 }
 
 deleteBtn.addEventListener('click', async () => {
-  statusDiv.textContent = 'ステータス: 削除中...';
-  try {
-    const result = await invoke('delete_new_folders');
-    statusDiv.textContent = `ステータス: ${result}`;
-    if (await checkNotificationPermission()) {
-      sendNotification({ title: 'Desktop Organizer', body: result });
-    }
-  } catch (error) {
-    statusDiv.textContent = `エラー: ${error}`;
-  }
-});
+  const confirmed = await ask('「新しいフォルダー」をすべて削除しますか？ (サブフォルダ内も含まれます)', {
+    title: 'Sortd',
+    kind: 'warning',
+  });
 
-classifyBtn.addEventListener('click', async () => {
-  const prefix = prefixInput.value || '◇';
-  statusDiv.textContent = 'ステータス: 分類中...';
+  if (!confirmed) return;
+
   try {
-    const result = await invoke('classify_folders', { prefix });
-    statusDiv.textContent = `ステータス: ${result}`;
-    if (await checkNotificationPermission()) {
-      sendNotification({ title: 'Desktop Organizer', body: result });
-    }
-  } catch (error) {
-    statusDiv.textContent = `エラー: ${error}`;
+    setStatus('削除中...');
+    const count = await invoke('delete_new_folders');
+    setStatus(`${count} 個のフォルダを削除しました。`);
+    await sendNotification({ title: 'Sortd', body: `整理完了: ${count} 個の空の「新しいフォルダー」を削除しました。` });
+  } catch (err) {
+    setStatus(`エラー: ${err}`);
   }
 });
 
 organizeBtn.addEventListener('click', async () => {
   const prefix = prefixInput.value || '◇';
-  statusDiv.textContent = 'ステータス: プレビュー取得中...';
-
   try {
+    setStatus('プレビューを取得中...');
     const preview = await invoke('get_organization_preview', { prefix });
 
     if (preview.length === 0) {
-      await message('整理するファイルが見つかりませんでした。', { title: 'Desktop Organizer', kind: 'info' });
-      statusDiv.textContent = 'ステータス: 待機中';
+      await message('整理が必要なファイルはありません。', { title: 'Sortd', kind: 'info' });
+      setStatus('整理不要');
       return;
     }
 
-    const previewText = preview.map(([file, folder]) => `${file} -> ${folder}`).join('\n');
-    const confirmed = await ask(`以下の内容で整理を実行しますか？\n\n${previewText}`, {
-      title: '実行の確認',
-      kind: 'info',
-      okLabel: '実行',
-      cancelLabel: 'キャンセル'
+    const previewText = preview.map(p => `${p.filename} -> ${p.target_dir}`).join('\n');
+    const confirmed = await ask(`以下のファイルを整理しますか？\n\n${previewText.substring(0, 500)}${previewText.length > 500 ? '...' : ''}`, {
+      title: 'Sortd - プレビュー',
     });
 
-    if (confirmed) {
-      statusDiv.textContent = 'ステータス: 整理中...';
-      const result = await invoke('organize_files', { prefix });
-      statusDiv.textContent = `ステータス: ${result}`;
-      if (await checkNotificationPermission()) {
-        sendNotification({ title: 'Desktop Organizer', body: result });
-      }
-    } else {
-      statusDiv.textContent = 'ステータス: キャンセルされました';
+    if (!confirmed) {
+      setStatus('キャンセルされました');
+      return;
     }
-  } catch (error) {
-    statusDiv.textContent = `エラー: ${error}`;
+
+    setStatus('整理中...');
+    const count = await invoke('organize_files', { prefix });
+    setStatus(`${count} 個のファイルを整理しました。`);
+    await sendNotification({ title: 'Sortd', body: `整理完了: ${count} 個のファイルを拡張子別に移動しました。` });
+  } catch (err) {
+    setStatus(`エラー: ${err}`);
+  }
+});
+
+classifyBtn.addEventListener('click', async () => {
+  const prefix = prefixInput.value || '◇';
+  try {
+    setStatus('分類のプレビューを取得中...');
+    const preview = await invoke('get_classification_preview', { prefix });
+
+    if (preview.length === 0) {
+      await message('分類可能なフォルダは見つかりませんでした。', { title: 'Sortd', kind: 'info' });
+      setStatus('分類不要');
+      return;
+    }
+
+    const previewText = preview.map(p => `${p.folder_name} -> ${p.category}`).join('\n');
+    const confirmed = await ask(`以下のフォルダを分類しますか？\n\n${previewText.substring(0, 500)}${previewText.length > 500 ? '...' : ''}`, {
+      title: 'Sortd - 分類プレビュー',
+    });
+
+    if (!confirmed) {
+      setStatus('キャンセルされました');
+      return;
+    }
+
+    setStatus('分類中...');
+    const count = await invoke('classify_folders', { prefix });
+    setStatus(`${count} 個のフォルダを分類しました。`);
+    await sendNotification({ title: 'Sortd', body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
+  } catch (err) {
+    setStatus(`エラー: ${err}`);
   }
 });

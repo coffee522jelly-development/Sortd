@@ -1,22 +1,46 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    button { padding: 10px 20px; margin: 10px 0; cursor: pointer; display: block; width: 100%; }
-    #status { margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 50px; }
-  </style>
+  <title>Sortd</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0-beta.9/daisyui.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div style="margin-bottom: 20px;">
-    <label for="prefixInput">整理用フォルダの接頭辞:</label>
-    <input type="text" id="prefixInput" value="◇" style="width: 50px; text-align: center;">
+<body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-sm w-full card bg-base-100 shadow-2xl">
+    <div class="card-body gap-6">
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-bold text-base-content/70">フォルダ接頭辞</span>
+        </label>
+        <div class="flex gap-2">
+          <input type="text" id="prefixInput" value="◇" placeholder="接頭辞" class="input input-bordered w-full focus:input-primary transition-all text-center text-lg font-bold" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <button id="deleteBtn" class="btn btn-error btn-outline w-full justify-start gap-3 hover:bg-error hover:text-error-content">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          <span class="flex-1 text-left">一括削除</span>
+          <div class="badge badge-sm badge-ghost opacity-50">新しいフォルダー</div>
+        </button>
+
+        <button id="organizeBtn" class="btn btn-primary w-full justify-start gap-3 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+          <span class="flex-1 text-left">拡張子ごとに整理</span>
+        </button>
+
+        <button id="classifyBtn" class="btn btn-secondary w-full justify-start gap-3 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+          <span class="flex-1 text-left">フォルダを内容で分類</span>
+        </button>
+      </div>
+
+      <div id="status" class="mt-4 p-4 bg-base-200 rounded-xl text-xs min-h-[64px] flex items-center justify-center text-center leading-relaxed text-base-content/80 italic border border-base-300">
+        ステータス: 待機中
+      </div>
+    </div>
   </div>
-  <button id="deleteBtn">「新しいフォルダー」を一括削除</button>
-  <button id="organizeBtn">ファイルを拡張子ごとに整理</button>
-  <button id="classifyBtn">フォルダを内容で分類</button>
-  <div id="status">ステータス: 待機中</div>
   <script src="renderer.js"></script>
 </body>
 </html>
