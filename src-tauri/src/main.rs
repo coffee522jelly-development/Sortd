@@ -157,7 +157,7 @@ fn main() {
             #[cfg(target_os = "windows")]
             {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.set_menu(None);
+                    let _ = window.remove_menu();
                 }
             }
             Ok(())
