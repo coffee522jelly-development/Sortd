@@ -6,3 +6,6 @@ Sortdは、デスクトップ整理アプリです。
 - **拡張子別整理**: ファイルを `◇EXT` 形式のフォルダへ自動分類（ショートカット除外）。
 - **高度なフォルダ分類**: フォルダ内容を解析し、Web, Unity, Python, デザイン, 事務, メモ等のカテゴリへ自動移動。
 - **UI/UX**: メニューバーを非表示にし、NSISインストーラーに対応。
+
+Windows向けインストーラー
+- https://noisette.espresso.earth/myApps/WinDesktopOrganizer/Installer.zip
