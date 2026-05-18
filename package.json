@@ -4,45 +4,14 @@
   "description": "Desktop file and folder organization utility",
   "author": "User",
   "license": "ISC",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --win"
-  },
-  "build": {
-    "productName": "DesktopOrganizer",
-    "appId": "com.example.desktop-organizer",
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "DesktopOrganizer"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "index.html",
-      "renderer.js"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/coffee522jelly-development/Sortd.git"
-  },
-  "keywords": [],
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/coffee522jelly-development/Sortd/issues"
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
   },
-  "homepage": "https://github.com/coffee522jelly-development/Sortd#readme",
   "devDependencies": {
-    "electron": "^42.1.0",
-    "electron-builder": "^26.8.1"
+    "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/cli": "^2.1.0"
   }
 }
