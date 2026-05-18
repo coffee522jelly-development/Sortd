@@ -9,6 +9,11 @@ description = "Allows invoking the organize_files command"
 commands.allow = ["organize_files"]
 
 [[permission]]
+identifier = "allow-get-organization-preview"
+description = "Allows invoking the get_organization_preview command"
+commands.allow = ["get_organization_preview"]
+
+[[permission]]
 identifier = "allow-classify-folders"
 description = "Allows invoking the classify_folders command"
 commands.allow = ["classify_folders"]

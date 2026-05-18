@@ -28,7 +28,35 @@ fn delete_new_folders() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn organize_files() -> Result<String, String> {
+fn get_organization_preview(prefix: String) -> Result<Vec<(String, String)>, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
+    let mut preview = Vec::new();
+
+    let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.is_file() {
+            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+
+            if ext == "lnk" || ext == "url" {
+                continue;
+            }
+
+            let folder_name = if ext.is_empty() {
+                format!("{}NO_EXTENSION", prefix)
+            } else {
+                format!("{}{}", prefix, ext.to_uppercase())
+            };
+            preview.push((file_name.to_string(), folder_name));
+        }
+    }
+    Ok(preview)
+}
+
+#[tauri::command]
+fn organize_files(prefix: String) -> Result<String, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
@@ -45,9 +73,9 @@ fn organize_files() -> Result<String, String> {
             }
 
             let folder_name = if ext.is_empty() {
-                "◇NO_EXTENSION".to_string()
+                format!("{}NO_EXTENSION", prefix)
             } else {
-                format!("◇{}", ext.to_uppercase())
+                format!("{}{}", prefix, ext.to_uppercase())
             };
 
             let target_folder = desktop.join(&folder_name);
@@ -77,7 +105,7 @@ fn organize_files() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn classify_folders() -> Result<String, String> {
+fn classify_folders(prefix: String) -> Result<String, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
@@ -87,7 +115,7 @@ fn classify_folders() -> Result<String, String> {
         let path = entry.path();
         if path.is_dir() {
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if name.starts_with('◇') {
+            if name.starts_with(&prefix) {
                 continue;
             }
 
@@ -113,23 +141,23 @@ fn classify_folders() -> Result<String, String> {
             let has_ext = |list: &[&str]| list.iter().any(|e| exts.contains(*e));
 
             let category = if has_ext(&web_exts) {
-                "◇WebProject"
+                format!("{}WebProject", prefix)
             } else if has_ext(&unity_exts) {
-                "◇UnityProject"
+                format!("{}UnityProject", prefix)
             } else if has_ext(&python_exts) {
-                "◇PythonProject"
+                format!("{}PythonProject", prefix)
             } else if has_ext(&design_exts) {
-                "◇DesignProject"
+                format!("{}DesignProject", prefix)
             } else if has_ext(&doc_exts) {
-                "◇DocumentProject"
+                format!("{}DocumentProject", prefix)
             } else if has_ext(&prog_exts) {
-                "◇ProgrammingProject"
+                format!("{}ProgrammingProject", prefix)
             } else if (exts.contains("xlsx") || exts.contains("xls")) && exts.contains("png") {
-                "◇ProjectWorking"
+                format!("{}ProjectWorking", prefix)
             } else if exts.contains("txt") && exts.len() == 1 {
-                "◇Memo"
+                format!("{}Memo", prefix)
             } else {
-                "◇NoCategories"
+                format!("{}NoCategories", prefix)
             };
 
             let target_folder = desktop.join(category);
@@ -154,6 +182,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             #[cfg(target_os = "windows")]
             {
@@ -165,6 +194,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             delete_new_folders,
+            get_organization_preview,
             organize_files,
             classify_folders
         ])
