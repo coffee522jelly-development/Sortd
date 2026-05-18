@@ -7,8 +7,8 @@ use std::time::SystemTime;
 use tauri::Manager;
 
 #[tauri::command]
-fn delete_new_folders(app: tauri::AppHandle) -> Result<String, String> {
-    let desktop = app.path().desktop_dir().map_err(|e| e.to_string())?;
+fn delete_new_folders() -> Result<String, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut deleted_count = 0;
 
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
@@ -28,8 +28,8 @@ fn delete_new_folders(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn organize_files(app: tauri::AppHandle) -> Result<String, String> {
-    let desktop = app.path().desktop_dir().map_err(|e| e.to_string())?;
+fn organize_files() -> Result<String, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
@@ -77,8 +77,8 @@ fn organize_files(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn classify_folders(app: tauri::AppHandle) -> Result<String, String> {
-    let desktop = app.path().desktop_dir().map_err(|e| e.to_string())?;
+fn classify_folders() -> Result<String, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
 
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;

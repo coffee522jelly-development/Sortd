@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.example.desktop-organizer",
   "build": {
-    "frontendDist": ".",
-    "devUrl": "."
+    "frontendDist": "../src"
   },
   "app": {
     "withGlobalTauri": true,
@@ -35,8 +34,7 @@
     ],
     "windows": {
       "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true
+        "installMode": "both"
       }
     }
   }
