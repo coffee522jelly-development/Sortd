@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "DesktopOrganizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.example.desktop-organizer",
   "build": {
     "frontendDist": "../src"
@@ -34,7 +34,8 @@
     ],
     "windows": {
       "nsis": {
-        "installMode": "both"
+        "installMode": "both",
+        "languages": ["Japanese"]
       }
     }
   }

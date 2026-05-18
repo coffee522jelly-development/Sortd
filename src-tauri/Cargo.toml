@@ -1,6 +1,6 @@
 [package]
 name = "desktop-organizer"
-version = "1.0.0"
+version = "1.0.1"
 description = "Desktop file and folder organization utility"
 authors = ["User"]
 license = "ISC"
