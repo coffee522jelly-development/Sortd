@@ -9,6 +9,7 @@
     "core:default",
     "allow-delete-new-folders",
     "allow-organize-files",
-    "allow-classify-folders"
+    "allow-classify-folders",
+    "notification:default"
   ]
 }

@@ -11,7 +11,10 @@
     "build": "tauri build"
   },
   "devDependencies": {
-    "@tauri-apps/api": "^2.1.1",
-    "@tauri-apps/cli": "^2.1.0"
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/cli": "^2.11.2"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-notification": "^2.3.3"
   }
 }
