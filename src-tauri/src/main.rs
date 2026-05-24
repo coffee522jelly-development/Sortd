@@ -3,20 +3,35 @@
 
 use std::collections::HashSet;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::SystemTime;
-use tauri::Manager;
+use tauri::{Manager, State};
 use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct FilePreview {
     pub filename: String,
     pub target_dir: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct FolderPreview {
     pub folder_name: String,
     pub category: String,
+}
+
+struct MoveOp {
+    from: PathBuf,
+    to: PathBuf,
+}
+
+struct History {
+    batches: Vec<Vec<MoveOp>>,
+}
+
+pub struct AppState {
+    history: Mutex<History>,
 }
 
 #[tauri::command]
@@ -72,9 +87,10 @@ fn get_organization_preview(prefix: String) -> Result<Vec<FilePreview>, String> 
 }
 
 #[tauri::command]
-fn organize_files(prefix: String) -> Result<usize, String> {
+fn organize_files(state: State<'_, AppState>, prefix: String) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
+    let mut batch = Vec::new();
 
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
     for entry in entries {
@@ -112,10 +128,18 @@ fn organize_files(prefix: String) -> Result<usize, String> {
                 target_path = target_folder.join(new_name);
             }
 
+            let original_path = path.clone();
             fs::rename(&path, &target_path).map_err(|e| e.to_string())?;
+            batch.push(MoveOp { from: original_path, to: target_path });
             moved_count += 1;
         }
     }
+
+    if !batch.is_empty() {
+        let mut history = state.history.lock().unwrap();
+        history.batches.push(batch);
+    }
+
     Ok(moved_count)
 }
 
@@ -188,9 +212,10 @@ fn get_classification_preview(prefix: String) -> Result<Vec<FolderPreview>, Stri
 }
 
 #[tauri::command]
-fn classify_folders(prefix: String) -> Result<usize, String> {
+fn classify_folders(state: State<'_, AppState>, prefix: String) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
+    let mut batch = Vec::new();
 
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
     for entry in entries {
@@ -214,15 +239,51 @@ fn classify_folders(prefix: String) -> Result<usize, String> {
                 target_path = target_folder.join(format!("{}_{}", name, now));
             }
 
+            let original_path = path.clone();
             fs::rename(&path, &target_path).map_err(|e| e.to_string())?;
+            batch.push(MoveOp { from: original_path, to: target_path });
             moved_count += 1;
         }
     }
+
+    if !batch.is_empty() {
+        let mut history = state.history.lock().unwrap();
+        history.batches.push(batch);
+    }
+
     Ok(moved_count)
+}
+
+#[tauri::command]
+fn undo_last_operation(state: State<'_, AppState>) -> Result<usize, String> {
+    let mut history = state.history.lock().unwrap();
+    if let Some(batch) = history.batches.pop() {
+        let mut undo_count = 0;
+        for op in batch {
+            if op.to.exists() {
+                // If the original destination folder no longer exists, we might need to recreate it
+                // but since it's the Desktop, it should exist.
+                // However, 'from' was on the Desktop root.
+                if let Some(parent) = op.from.parent() {
+                    if !parent.exists() {
+                        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                    }
+                }
+                fs::rename(&op.to, &op.from).map_err(|e| e.to_string())?;
+                undo_count += 1;
+            }
+        }
+        Ok(undo_count)
+    } else {
+        Err("元に戻す履歴がありません。".to_string())
+    }
 }
 
 fn main() {
     tauri::Builder::default()
+        .manage(AppState {
+            history: Mutex::new(History { batches: Vec::new() }),
+        })
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
@@ -240,7 +301,8 @@ fn main() {
             get_organization_preview,
             organize_files,
             get_classification_preview,
-            classify_folders
+            classify_folders,
+            undo_last_operation
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

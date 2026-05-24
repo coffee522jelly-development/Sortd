@@ -17,3 +17,13 @@ commands.allow = ["get_organization_preview"]
 identifier = "allow-classify-folders"
 description = "Allows invoking the classify_folders command"
 commands.allow = ["classify_folders"]
+
+[[permission]]
+identifier = "allow-get-classification-preview"
+description = "Allows invoking the get_classification_preview command"
+commands.allow = ["get_classification_preview"]
+
+[[permission]]
+identifier = "allow-undo-last-operation"
+description = "Allows invoking the undo_last_operation command"
+commands.allow = ["undo_last_operation"]

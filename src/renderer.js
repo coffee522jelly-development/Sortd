@@ -5,6 +5,7 @@ const { ask, message } = window.__TAURI_PLUGIN_DIALOG__;
 const deleteBtn = document.getElementById('deleteBtn');
 const organizeBtn = document.getElementById('organizeBtn');
 const classifyBtn = document.getElementById('classifyBtn');
+const undoBtn = document.getElementById('undoBtn');
 const statusDiv = document.getElementById('status');
 const prefixInput = document.getElementById('prefixInput');
 
@@ -90,5 +91,17 @@ classifyBtn.addEventListener('click', async () => {
     await sendNotification({ title: 'Sortd', body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
   } catch (err) {
     setStatus(`エラー: ${err}`);
+  }
+});
+
+undoBtn.addEventListener('click', async () => {
+  try {
+    setStatus('元に戻しています...');
+    const count = await invoke('undo_last_operation');
+    setStatus(`${count} 件の変更を元に戻しました。`);
+    await sendNotification({ title: 'Sortd', body: `元に戻す完了: ${count} 件のファイルを元の場所へ戻しました。` });
+  } catch (err) {
+    setStatus(`エラー: ${err}`);
+    await message(err, { title: 'Sortd', kind: 'error' });
   }
 });

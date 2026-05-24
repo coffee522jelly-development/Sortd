@@ -11,6 +11,8 @@
     "allow-organize-files",
     "allow-get-organization-preview",
     "allow-classify-folders",
+    "allow-get-classification-preview",
+    "allow-undo-last-operation",
     "notification:default",
     "dialog:default"
   ]
