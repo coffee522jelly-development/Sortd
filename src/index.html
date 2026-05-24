@@ -1,50 +1,52 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="light">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>Sortd</title>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0-beta.9/daisyui.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* System theme support */
+    @media (prefers-color-scheme: dark) {
+      html { color-scheme: dark; }
+    }
+  </style>
 </head>
 <body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
-  <div class="max-w-sm w-full card bg-base-100 shadow-2xl">
-    <div class="card-body gap-6">
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-bold text-base-content/70">フォルダ接頭辞</span>
-        </label>
-        <div class="flex gap-2">
-          <input type="text" id="prefixInput" value="◇" placeholder="接頭辞" class="input input-bordered w-full focus:input-primary transition-all text-center text-lg font-bold" />
-        </div>
+  <div class="max-w-xs w-full card bg-base-100 shadow-2xl">
+    <div class="card-body gap-4 p-6">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-base-content/70">フォルダ接頭辞</span>
+        <input type="text" id="prefixInput" value="◇" placeholder="接頭辞" class="input input-bordered input-xs w-12 focus:input-primary transition-all text-center font-bold" />
       </div>
 
-      <div class="flex flex-col gap-3">
-        <button id="deleteBtn" class="btn btn-error btn-outline w-full justify-start gap-3 hover:bg-error hover:text-error-content">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+      <div class="flex flex-col gap-2">
+        <button id="deleteBtn" class="btn btn-error btn-outline btn-sm w-full justify-start gap-2 hover:bg-error hover:text-error-content">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           <span class="flex-1 text-left">一括削除</span>
-          <div class="badge badge-sm badge-ghost opacity-50">新しいフォルダー</div>
+          <div class="badge badge-xs badge-ghost opacity-50">新しいフォルダー</div>
         </button>
 
-        <button id="organizeBtn" class="btn btn-primary w-full justify-start gap-3 shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+        <button id="organizeBtn" class="btn btn-primary btn-sm w-full justify-start gap-2 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
           <span class="flex-1 text-left">拡張子ごとに整理</span>
         </button>
 
-        <button id="classifyBtn" class="btn btn-secondary w-full justify-start gap-3 shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+        <button id="classifyBtn" class="btn btn-secondary btn-sm w-full justify-start gap-2 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
           <span class="flex-1 text-left">フォルダを内容で分類</span>
         </button>
 
-        <div class="divider"></div>
+        <div class="divider m-0"></div>
 
-        <button id="undoBtn" class="btn btn-ghost btn-sm w-full justify-center gap-2 opacity-70 hover:opacity-100">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+        <button id="undoBtn" class="btn btn-ghost btn-xs w-full justify-center gap-1 opacity-70 hover:opacity-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
           <span>元に戻す</span>
         </button>
       </div>
 
-      <div id="status" class="mt-4 p-4 bg-base-200 rounded-xl text-xs min-h-[64px] flex items-center justify-center text-center leading-relaxed text-base-content/80 italic border border-base-300">
-        ステータス: 待機中
+      <div id="status" class="p-3 bg-base-200 rounded-lg text-[10px] min-h-[48px] flex items-center justify-center text-center leading-tight text-base-content/80 italic border border-base-300">
+        待機中
       </div>
     </div>
   </div>
