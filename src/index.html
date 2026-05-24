@@ -5,12 +5,19 @@
   <title>Sortd</title>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0-beta.9/daisyui.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* System theme support */
-    @media (prefers-color-scheme: dark) {
-      html { color-scheme: dark; }
-    }
-  </style>
+  <script>
+    // Robust system theme detection for DaisyUI
+    const updateTheme = () => {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    };
+
+    // Initial update
+    updateTheme();
+
+    // Listen for changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+  </script>
 </head>
 <body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xs w-full card bg-base-100 shadow-2xl">
