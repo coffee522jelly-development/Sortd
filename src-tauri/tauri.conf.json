@@ -38,7 +38,8 @@
         "installMode": "both",
         "languages": [
           "Japanese"
-        ]
+        ],
+        "displayLanguageSelector": false
       }
     }
   }
