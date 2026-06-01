@@ -35,7 +35,7 @@ pub struct AppState {
 }
 
 #[tauri::command]
-fn delete_new_folders() -> Result<usize, String> {
+fn delete_new_folders(excluded: Vec<String>) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut deleted_count = 0;
 
@@ -45,6 +45,9 @@ fn delete_new_folders() -> Result<usize, String> {
         let path = entry.path();
         if path.is_dir() {
             if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if excluded.contains(&name.to_string()) {
+                    continue;
+                }
                 if name.contains("新しいフォルダー") {
                     fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
                     deleted_count += 1;
@@ -56,7 +59,7 @@ fn delete_new_folders() -> Result<usize, String> {
 }
 
 #[tauri::command]
-fn get_organization_preview(prefix: String) -> Result<Vec<FilePreview>, String> {
+fn get_organization_preview(prefix: String, excluded: Vec<String>) -> Result<Vec<FilePreview>, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut preview = Vec::new();
 
@@ -66,6 +69,10 @@ fn get_organization_preview(prefix: String) -> Result<Vec<FilePreview>, String> 
         let path = entry.path();
         if path.is_file() {
             let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+            if excluded.contains(&file_name.to_string()) {
+                continue;
+            }
+
             let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
 
             if ext == "lnk" || ext == "url" {
@@ -87,7 +94,7 @@ fn get_organization_preview(prefix: String) -> Result<Vec<FilePreview>, String> 
 }
 
 #[tauri::command]
-fn organize_files(state: State<'_, AppState>, prefix: String) -> Result<usize, String> {
+fn organize_files(state: State<'_, AppState>, prefix: String, excluded: Vec<String>) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
     let mut batch = Vec::new();
@@ -97,6 +104,11 @@ fn organize_files(state: State<'_, AppState>, prefix: String) -> Result<usize, S
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
         if path.is_file() {
+            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+            if excluded.contains(&file_name.to_string()) {
+                continue;
+            }
+
             let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
 
             if ext == "lnk" || ext == "url" {
@@ -114,8 +126,8 @@ fn organize_files(state: State<'_, AppState>, prefix: String) -> Result<usize, S
                 fs::create_dir(&target_folder).map_err(|e| e.to_string())?;
             }
 
-            let file_name = path.file_name().ok_or("Invalid file name")?;
-            let mut target_path = target_folder.join(file_name);
+            let file_name_os = path.file_name().ok_or("Invalid file name")?;
+            let mut target_path = target_folder.join(file_name_os);
 
             if target_path.exists() {
                 let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
@@ -188,7 +200,7 @@ fn get_category_for_folder(path: &std::path::Path, prefix: &str) -> Result<Strin
 }
 
 #[tauri::command]
-fn get_classification_preview(prefix: String) -> Result<Vec<FolderPreview>, String> {
+fn get_classification_preview(prefix: String, excluded: Vec<String>) -> Result<Vec<FolderPreview>, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut preview = Vec::new();
 
@@ -198,7 +210,7 @@ fn get_classification_preview(prefix: String) -> Result<Vec<FolderPreview>, Stri
         let path = entry.path();
         if path.is_dir() {
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if name.starts_with(&prefix) {
+            if name.starts_with(&prefix) || excluded.contains(&name.to_string()) {
                 continue;
             }
             let category = get_category_for_folder(&path, &prefix)?;
@@ -212,7 +224,7 @@ fn get_classification_preview(prefix: String) -> Result<Vec<FolderPreview>, Stri
 }
 
 #[tauri::command]
-fn classify_folders(state: State<'_, AppState>, prefix: String) -> Result<usize, String> {
+fn classify_folders(state: State<'_, AppState>, prefix: String, excluded: Vec<String>) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
     let mut moved_count = 0;
     let mut batch = Vec::new();
@@ -223,7 +235,7 @@ fn classify_folders(state: State<'_, AppState>, prefix: String) -> Result<usize,
         let path = entry.path();
         if path.is_dir() {
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if name.starts_with(&prefix) {
+            if name.starts_with(&prefix) || excluded.contains(&name.to_string()) {
                 continue;
             }
 
@@ -261,9 +273,6 @@ fn undo_last_operation(state: State<'_, AppState>) -> Result<usize, String> {
         let mut undo_count = 0;
         for op in batch {
             if op.to.exists() {
-                // If the original destination folder no longer exists, we might need to recreate it
-                // but since it's the Desktop, it should exist.
-                // However, 'from' was on the Desktop root.
                 if let Some(parent) = op.from.parent() {
                     if !parent.exists() {
                         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
