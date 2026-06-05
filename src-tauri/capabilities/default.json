@@ -13,6 +13,7 @@
     "allow-classify-folders",
     "allow-get-classification-preview",
     "allow-undo-last-operation",
+    "allow-empty-recycle-bin",
     "notification:default",
     "dialog:default"
   ]

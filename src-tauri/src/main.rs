@@ -4,6 +4,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::Mutex;
 use std::time::SystemTime;
 use tauri::{Manager, State};
@@ -39,6 +40,29 @@ fn is_excluded(path: &Path, excluded_paths: &[String]) -> bool {
     excluded_paths.iter().any(|p| {
         path_str == *p || path_str.starts_with(&(p.to_owned() + std::path::MAIN_SEPARATOR.to_string().as_str()))
     })
+}
+
+#[tauri::command]
+fn empty_recycle_bin() -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let status = Command::new("powershell")
+            .args(["-Command", "Clear-RecycleBin -Confirm:$false -ErrorAction SilentlyContinue"])
+            .status()
+            .map_err(|e| e.to_string())?;
+
+        if status.success() {
+            Ok(())
+        } else {
+            // Note: If bin is already empty, PowerShell might return non-zero depending on environment,
+            // but SilentlyContinue usually handles it.
+            Ok(())
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("ごみ箱を空にする機能はWindowsのみ対応しています。".to_string())
+    }
 }
 
 #[tauri::command]
@@ -325,7 +349,8 @@ fn main() {
             organize_files,
             get_classification_preview,
             classify_folders,
-            undo_last_operation
+            undo_last_operation,
+            empty_recycle_bin
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

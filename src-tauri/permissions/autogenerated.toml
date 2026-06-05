@@ -27,3 +27,8 @@ commands.allow = ["get_classification_preview"]
 identifier = "allow-undo-last-operation"
 description = "Allows invoking the undo_last_operation command"
 commands.allow = ["undo_last_operation"]
+
+[[permission]]
+identifier = "allow-empty-recycle-bin"
+description = "Allows invoking the empty_recycle_bin command"
+commands.allow = ["empty_recycle_bin"]
