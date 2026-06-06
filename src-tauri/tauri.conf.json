@@ -40,6 +40,9 @@
           "Japanese"
         ],
         "displayLanguageSelector": false
+      },
+      "wix": {
+        "language": "ja-JP"
       }
     }
   }
