@@ -1,3 +1,256 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --theme-primary: theme('colors.slate.600');
+    --theme-primary-hover: theme('colors.slate.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.slate.100');
+    --theme-accent-foreground: theme('colors.slate.900');
+    --theme-ring: theme('colors.slate.400');
+  }
+
+  .theme-slate {
+    --theme-primary: theme('colors.slate.600');
+    --theme-primary-hover: theme('colors.slate.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.slate.100');
+    --theme-accent-foreground: theme('colors.slate.900');
+    --theme-ring: theme('colors.slate.400');
+  }
+  .theme-rose {
+    --theme-primary: theme('colors.rose.600');
+    --theme-primary-hover: theme('colors.rose.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.rose.100');
+    --theme-accent-foreground: theme('colors.rose.900');
+    --theme-ring: theme('colors.rose.400');
+  }
+  .theme-blue {
+    --theme-primary: theme('colors.blue.600');
+    --theme-primary-hover: theme('colors.blue.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.blue.100');
+    --theme-accent-foreground: theme('colors.blue.900');
+    --theme-ring: theme('colors.blue.400');
+  }
+  .theme-green {
+    --theme-primary: theme('colors.green.600');
+    --theme-primary-hover: theme('colors.green.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.green.100');
+    --theme-accent-foreground: theme('colors.green.900');
+    --theme-ring: theme('colors.green.400');
+  }
+  .theme-orange {
+    --theme-primary: theme('colors.orange.600');
+    --theme-primary-hover: theme('colors.orange.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.orange.100');
+    --theme-accent-foreground: theme('colors.orange.900');
+    --theme-ring: theme('colors.orange.400');
+  }
+  .theme-purple {
+    --theme-primary: theme('colors.purple.600');
+    --theme-primary-hover: theme('colors.purple.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.purple.100');
+    --theme-accent-foreground: theme('colors.purple.900');
+    --theme-ring: theme('colors.purple.400');
+  }
+  .theme-amber {
+    --theme-primary: theme('colors.amber.600');
+    --theme-primary-hover: theme('colors.amber.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.amber.100');
+    --theme-accent-foreground: theme('colors.amber.900');
+    --theme-ring: theme('colors.amber.400');
+  }
+  .theme-emerald {
+    --theme-primary: theme('colors.emerald.600');
+    --theme-primary-hover: theme('colors.emerald.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.emerald.100');
+    --theme-accent-foreground: theme('colors.emerald.900');
+    --theme-ring: theme('colors.emerald.400');
+  }
+  .theme-cyan {
+    --theme-primary: theme('colors.cyan.600');
+    --theme-primary-hover: theme('colors.cyan.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.cyan.100');
+    --theme-accent-foreground: theme('colors.cyan.900');
+    --theme-ring: theme('colors.cyan.400');
+  }
+  .theme-indigo {
+    --theme-primary: theme('colors.indigo.600');
+    --theme-primary-hover: theme('colors.indigo.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.indigo.100');
+    --theme-accent-foreground: theme('colors.indigo.900');
+    --theme-ring: theme('colors.indigo.400');
+  }
+  .theme-violet {
+    --theme-primary: theme('colors.violet.600');
+    --theme-primary-hover: theme('colors.violet.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.violet.100');
+    --theme-accent-foreground: theme('colors.violet.900');
+    --theme-ring: theme('colors.violet.400');
+  }
+  .theme-pink {
+    --theme-primary: theme('colors.pink.600');
+    --theme-primary-hover: theme('colors.pink.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.pink.100');
+    --theme-accent-foreground: theme('colors.pink.900');
+    --theme-ring: theme('colors.pink.400');
+  }
+  .theme-red {
+    --theme-primary: theme('colors.red.600');
+    --theme-primary-hover: theme('colors.red.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.red.100');
+    --theme-accent-foreground: theme('colors.red.900');
+    --theme-ring: theme('colors.red.400');
+  }
+  .theme-teal {
+    --theme-primary: theme('colors.teal.600');
+    --theme-primary-hover: theme('colors.teal.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.teal.100');
+    --theme-accent-foreground: theme('colors.teal.900');
+    --theme-ring: theme('colors.teal.400');
+  }
+  .theme-sky {
+    --theme-primary: theme('colors.sky.600');
+    --theme-primary-hover: theme('colors.sky.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.sky.100');
+    --theme-accent-foreground: theme('colors.sky.900');
+    --theme-ring: theme('colors.sky.400');
+  }
+  .theme-lime {
+    --theme-primary: theme('colors.lime.600');
+    --theme-primary-hover: theme('colors.lime.700');
+    --theme-primary-foreground: theme('colors.white');
+    --theme-accent: theme('colors.lime.100');
+    --theme-accent-foreground: theme('colors.lime.900');
+    --theme-ring: theme('colors.lime.400');
+  }
+
+  .dark .theme-slate {
+    --theme-primary: theme('colors.slate.400');
+    --theme-primary-hover: theme('colors.slate.300');
+    --theme-primary-foreground: theme('colors.slate.950');
+    --theme-accent: theme('colors.slate.800');
+    --theme-accent-foreground: theme('colors.slate.100');
+  }
+  .dark .theme-rose {
+    --theme-primary: theme('colors.rose.400');
+    --theme-primary-hover: theme('colors.rose.300');
+    --theme-primary-foreground: theme('colors.rose.950');
+    --theme-accent: theme('colors.rose.900');
+    --theme-accent-foreground: theme('colors.rose.100');
+  }
+  .dark .theme-blue {
+    --theme-primary: theme('colors.blue.400');
+    --theme-primary-hover: theme('colors.blue.300');
+    --theme-primary-foreground: theme('colors.blue.950');
+    --theme-accent: theme('colors.blue.900');
+    --theme-accent-foreground: theme('colors.blue.100');
+  }
+  .dark .theme-green {
+    --theme-primary: theme('colors.green.400');
+    --theme-primary-hover: theme('colors.green.300');
+    --theme-primary-foreground: theme('colors.green.950');
+    --theme-accent: theme('colors.green.900');
+    --theme-accent-foreground: theme('colors.green.100');
+  }
+  .dark .theme-orange {
+    --theme-primary: theme('colors.orange.400');
+    --theme-primary-hover: theme('colors.orange.300');
+    --theme-primary-foreground: theme('colors.orange.950');
+    --theme-accent: theme('colors.orange.900');
+    --theme-accent-foreground: theme('colors.orange.100');
+  }
+  .dark .theme-purple {
+    --theme-primary: theme('colors.purple.400');
+    --theme-primary-hover: theme('colors.purple.300');
+    --theme-primary-foreground: theme('colors.purple.950');
+    --theme-accent: theme('colors.purple.900');
+    --theme-accent-foreground: theme('colors.purple.100');
+  }
+  .dark .theme-amber {
+    --theme-primary: theme('colors.amber.400');
+    --theme-primary-hover: theme('colors.amber.300');
+    --theme-primary-foreground: theme('colors.amber.950');
+    --theme-accent: theme('colors.amber.900');
+    --theme-accent-foreground: theme('colors.amber.100');
+  }
+  .dark .theme-emerald {
+    --theme-primary: theme('colors.emerald.400');
+    --theme-primary-hover: theme('colors.emerald.300');
+    --theme-primary-foreground: theme('colors.emerald.950');
+    --theme-accent: theme('colors.emerald.900');
+    --theme-accent-foreground: theme('colors.emerald.100');
+  }
+  .dark .theme-cyan {
+    --theme-primary: theme('colors.cyan.400');
+    --theme-primary-hover: theme('colors.cyan.300');
+    --theme-primary-foreground: theme('colors.cyan.950');
+    --theme-accent: theme('colors.cyan.900');
+    --theme-accent-foreground: theme('colors.cyan.100');
+  }
+  .dark .theme-indigo {
+    --theme-primary: theme('colors.indigo.400');
+    --theme-primary-hover: theme('colors.indigo.300');
+    --theme-primary-foreground: theme('colors.indigo.950');
+    --theme-accent: theme('colors.indigo.900');
+    --theme-accent-foreground: theme('colors.indigo.100');
+  }
+  .dark .theme-violet {
+    --theme-primary: theme('colors.violet.400');
+    --theme-primary-hover: theme('colors.violet.300');
+    --theme-primary-foreground: theme('colors.violet.950');
+    --theme-accent: theme('colors.violet.900');
+    --theme-accent-foreground: theme('colors.violet.100');
+  }
+  .dark .theme-pink {
+    --theme-primary: theme('colors.pink.400');
+    --theme-primary-hover: theme('colors.pink.300');
+    --theme-primary-foreground: theme('colors.pink.950');
+    --theme-accent: theme('colors.pink.900');
+    --theme-accent-foreground: theme('colors.pink.100');
+  }
+  .dark .theme-red {
+    --theme-primary: theme('colors.red.400');
+    --theme-primary-hover: theme('colors.red.300');
+    --theme-primary-foreground: theme('colors.red.950');
+    --theme-accent: theme('colors.red.900');
+    --theme-accent-foreground: theme('colors.red.100');
+  }
+  .dark .theme-teal {
+    --theme-primary: theme('colors.teal.400');
+    --theme-primary-hover: theme('colors.teal.300');
+    --theme-primary-foreground: theme('colors.teal.950');
+    --theme-accent: theme('colors.teal.900');
+    --theme-accent-foreground: theme('colors.teal.100');
+  }
+  .dark .theme-sky {
+    --theme-primary: theme('colors.sky.400');
+    --theme-primary-hover: theme('colors.sky.300');
+    --theme-primary-foreground: theme('colors.sky.950');
+    --theme-accent: theme('colors.sky.900');
+    --theme-accent-foreground: theme('colors.sky.100');
+  }
+  .dark .theme-lime {
+    --theme-primary: theme('colors.lime.400');
+    --theme-primary-hover: theme('colors.lime.300');
+    --theme-primary-foreground: theme('colors.lime.950');
+    --theme-accent: theme('colors.lime.900');
+    --theme-accent-foreground: theme('colors.lime.100');
+  }
+}
