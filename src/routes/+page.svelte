@@ -22,6 +22,14 @@
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateTheme);
   });
 
+  function formatSize(bytes) {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
+
   async function addExcludedItem(directory = true) {
     try {
       const selected = await open({
@@ -88,9 +96,10 @@
     if (!await ask("ごみ箱を完全に空にしますか？", { title: "Sortd", kind: "warning" })) return;
     try {
       status = "ごみ箱を空にしています...";
-      await invoke("empty_recycle_bin");
-      status = "ごみ箱を空にしました。";
-      await sendNotification({ title: "Sortd", body: "整理完了: ごみ箱を空にしました。" });
+      const bytes = await invoke("empty_recycle_bin");
+      const humanSize = formatSize(bytes);
+      status = `ごみ箱を空にしました (${humanSize})。`;
+      await sendNotification({ title: "Sortd", body: `整理完了: ごみ箱を空にしました (合計 ${humanSize})。` });
     } catch (err) { status = `エラー: ${err}`; }
   }
 

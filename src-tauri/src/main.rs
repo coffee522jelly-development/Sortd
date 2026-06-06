@@ -43,21 +43,30 @@ fn is_excluded(path: &Path, excluded_paths: &[String]) -> bool {
 }
 
 #[tauri::command]
-fn empty_recycle_bin() -> Result<(), String> {
+fn empty_recycle_bin() -> Result<u64, String> {
     #[cfg(target_os = "windows")]
     {
-        let status = Command::new("powershell")
-            .args(["-Command", "Clear-RecycleBin -Confirm:$false -ErrorAction SilentlyContinue"])
-            .status()
+        // PowerShell script to get size and then clear.
+        // Get-ChildItem -Path 'shell:RecycleBinFolder' is tricky,
+        // using ComObject Shell.Application is more reliable for size.
+        let ps_script = r#"
+            $shell = New-Object -ComObject Shell.Application
+            $bin = $shell.Namespace(0x0a)
+            $size = ($bin.Items() | Measure-Object -Property Size -Sum).Sum
+            if ($null -eq $size) { $size = 0 }
+            Clear-RecycleBin -Confirm:$false -ErrorAction SilentlyContinue
+            Write-Output $size
+        "#;
+
+        let output = Command::new("powershell")
+            .args(["-Command", ps_script])
+            .output()
             .map_err(|e| e.to_string())?;
 
-        if status.success() {
-            Ok(())
-        } else {
-            // Note: If bin is already empty, PowerShell might return non-zero depending on environment,
-            // but SilentlyContinue usually handles it.
-            Ok(())
-        }
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let size = stdout.parse::<u64>().unwrap_or(0);
+
+        Ok(size)
     }
     #[cfg(not(target_os = "windows"))]
     {
