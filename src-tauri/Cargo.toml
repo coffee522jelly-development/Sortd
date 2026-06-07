@@ -1,6 +1,6 @@
 [package]
 name = "sortd"
-version = "1.0.1"
+version = "1.0.0"
 description = "Desktop file and folder organization utility"
 authors = ["User"]
 license = "ISC"
