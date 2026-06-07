@@ -7,11 +7,14 @@
 
   // Persistent settings
   let prefix = persisted("sortd_prefix", "◇");
+  let todayPrefix = persisted("sortd_today_prefix", "▶");
   let excludedPaths = persisted("sortd_excluded_paths", []);
   let theme = persisted("sortd_theme", "theme-slate");
 
   // UI state
   let showSettings = false;
+  let showTodayModal = false;
+  let todayFolderName = "";
   let status = "待機中";
 
   const themes = [
@@ -100,13 +103,29 @@
     } catch (err) { status = `エラー: ${err}`; }
   }
 
+  async function handleOrganizeToday() {
+    if (!todayFolderName.trim()) return;
+    try {
+      status = "今日のファイルを整理中...";
+      const count = await invoke("organize_today_files", {
+        todayPrefix: $todayPrefix,
+        folderName: todayFolderName.trim(),
+        excluded: $excludedPaths
+      });
+      showTodayModal = false;
+      todayFolderName = "";
+      status = `${count} 個のファイルを移動しました。`;
+      await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個の「今日」のファイルを整理しました。` });
+    } catch (err) { status = `エラー: ${err}`; }
+  }
+
   async function handleEmptyRecycleBin() {
     if (!await ask("ごみ箱を完全に空にしますか？", { title: "Sortd", kind: "warning" })) return;
     try {
       status = "ごみ箱を空にしています...";
       const bytes = await invoke("empty_recycle_bin");
       const humanSize = formatSize(bytes);
-      status = `ごみ箱を空にしました (${humanSize})。`;
+      status = `ごみ箱を空しました (${humanSize})。`;
       await sendNotification({ title: "Sortd", body: `整理完了: ごみ箱を空にしました (合計 ${humanSize})。` });
     } catch (err) { status = `エラー: ${err}`; }
   }
@@ -125,7 +144,7 @@
 </script>
 
 <div class={$theme}>
-  <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs">
+  <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
     <div class="max-w-[280px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
@@ -138,47 +157,67 @@
             </button>
           </div>
 
-          <div class="grid gap-3">
-            <button
-              on:click={handleDelete}
-              class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-              <span>一括削除</span>
-              <span class="ml-auto text-[10px] font-normal text-slate-500 dark:text-slate-400">新しいフォルダー</span>
-            </button>
+          <div class="space-y-4">
+            <!-- Desktop Organization Group -->
+            <div class="grid gap-3">
+              <button
+                on:click={handleDelete}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                <span>一括削除</span>
+                <span class="ml-auto text-[10px] font-normal text-slate-500 dark:text-slate-400">新しいフォルダー</span>
+              </button>
 
-            <button
-              on:click={handleOrganize}
-              class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary-hover px-4 py-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>
-              <span>拡張子ごとに整理</span>
-            </button>
+              <button
+                on:click={handleOrganize}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary-hover px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>
+                <span>拡張子ごとに整理</span>
+              </button>
 
-            <button
-              on:click={handleClassify}
-              class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-              <span>内容で分類</span>
-            </button>
+              <button
+                on:click={handleClassify}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                <span>内容で分類</span>
+              </button>
 
-            <button
-              on:click={handleEmptyRecycleBin}
-              class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-              <span>ごみ箱を空にする</span>
-            </button>
+              <button
+                on:click={() => showTodayModal = true}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-600 dark:hover:text-amber-400 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <span>今日のファイルを整理</span>
+              </button>
+            </div>
 
-            <button
-              on:click={handleUndo}
-              class="inline-flex items-center justify-center gap-2 mt-4 whitespace-nowrap text-[10px] font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-slate-400 dark:text-slate-600 hover:text-primary uppercase tracking-wider underline underline-offset-4 decoration-slate-200 dark:decoration-slate-800"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2"/><path d="m3 10 6 6"/><path d="m3 10 6-6"/></svg>
-              元に戻す
-            </button>
+            <!-- Separator -->
+            <div class="relative py-2">
+              <div class="absolute inset-0 flex items-center"><span class="w-full border-t border-slate-100 dark:border-slate-800"></span></div>
+              <div class="relative flex justify-center text-[9px] uppercase"><span class="bg-white dark:bg-[#09090b] px-2 text-slate-400">Other Utilities</span></div>
+            </div>
+
+            <!-- Maintenance Group -->
+            <div class="grid gap-3">
+              <button
+                on:click={handleEmptyRecycleBin}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span>ごみ箱を空にする</span>
+              </button>
+
+              <button
+                on:click={handleUndo}
+                class="inline-flex items-center justify-center gap-2 mt-2 whitespace-nowrap text-[10px] font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-slate-400 dark:text-slate-600 hover:text-primary uppercase tracking-wider underline underline-offset-4 decoration-slate-200 dark:decoration-slate-800"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2"/><path d="m3 10 6 6"/><path d="m3 10 6-6"/></svg>
+                元に戻す
+              </button>
+            </div>
           </div>
 
           <!-- Status Bar -->
@@ -198,14 +237,23 @@
           </div>
 
           <div class="space-y-6">
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <label for="prefix" class="text-[10px] font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-500 uppercase tracking-wider">フォルダ接頭辞</label>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label for="prefix" class="text-[9px] font-medium text-slate-500 uppercase tracking-wider">整理接頭辞</label>
                 <input
                   id="prefix"
                   type="text"
                   bind:value={$prefix}
-                  class="flex h-8 w-12 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-center font-bold"
+                  class="flex h-8 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
+                />
+              </div>
+              <div class="space-y-2">
+                <label for="todayPrefix" class="text-[9px] font-medium text-slate-500 uppercase tracking-wider">日次接頭辞</label>
+                <input
+                  id="todayPrefix"
+                  type="text"
+                  bind:value={$todayPrefix}
+                  class="flex h-8 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
                 />
               </div>
             </div>
@@ -249,9 +297,43 @@
             </div>
           </div>
         {/if}
-
       </div>
     </div>
+
+    <!-- Today's File Organization Modal -->
+    {#if showTodayModal}
+      <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[240px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
+          <div class="space-y-1 text-center">
+            <h3 class="text-[11px] font-bold tracking-tight">フォルダ名の入力</h3>
+            <p class="text-[9px] text-slate-500">今日更新されたファイルを整理します</p>
+          </div>
+          <input
+            type="text"
+            bind:value={todayFolderName}
+            placeholder="例: 会議資料"
+            class="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            autofocus
+            on:keydown={(e) => e.key === 'Enter' && handleOrganizeToday()}
+          />
+          <div class="flex gap-2">
+            <button
+              on:click={() => { showTodayModal = false; todayFolderName = ""; }}
+              class="flex-1 h-8 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] text-[10px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              キャンセル
+            </button>
+            <button
+              on:click={handleOrganizeToday}
+              disabled={!todayFolderName.trim()}
+              class="flex-1 h-8 rounded-md bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary-hover disabled:opacity-50 shadow-sm"
+            >
+              実行
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
   </main>
 </div>
 
@@ -290,4 +372,12 @@
   :global(.dark) .theme-teal { --theme-primary: theme('colors.teal.400'); }
   :global(.dark) .theme-sky { --theme-primary: theme('colors.sky.400'); }
   :global(.dark) .theme-lime { --theme-primary: theme('colors.lime.400'); }
+
+  .animate-in {
+    animation: animate-in 0.2s ease-out;
+  }
+  @keyframes animate-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
 </style>

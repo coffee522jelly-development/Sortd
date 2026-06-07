@@ -6,9 +6,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{Manager, State};
 use serde::Serialize;
+use chrono::{Local, Datelike};
 
 #[derive(Serialize, Clone)]
 pub struct FilePreview {
@@ -40,6 +41,86 @@ fn is_excluded(path: &Path, excluded_paths: &[String]) -> bool {
     excluded_paths.iter().any(|p| {
         path_str == *p || path_str.starts_with(&(p.to_owned() + std::path::MAIN_SEPARATOR.to_string().as_str()))
     })
+}
+
+#[tauri::command]
+fn organize_today_files(state: State<'_, AppState>, today_prefix: String, folder_name: String, excluded: Vec<String>) -> Result<usize, String> {
+    let desktop = dirs::desktop_dir().ok_or("Could not find desktop directory")?;
+
+    // Get today's date in YYMMDD format
+    let now = Local::now();
+    let date_str = format!("{:02}{:02}{:02}", now.year() % 100, now.month(), now.day());
+
+    let target_folder_name = format!("{}{}-{}", today_prefix, date_str, folder_name);
+    let target_folder = desktop.join(&target_folder_name);
+
+    // Scoped to today (midnight to now)
+    let start_of_today = Local::now().date_naive().and_hms_opt(0, 0, 0).unwrap()
+        .and_local_timezone(Local).unwrap()
+        .with_timezone(&chrono::Utc);
+    let start_of_today_st = SystemTime::from(start_of_today);
+
+    let mut moved_count = 0;
+    let mut batch = Vec::new();
+
+    let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
+
+    // Collect paths to move first to avoid iterator issues if we create the dir
+    let mut to_move = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.is_file() {
+            if is_excluded(&path, &excluded) {
+                continue;
+            }
+
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+            if ext == "lnk" || ext == "url" {
+                continue;
+            }
+
+            let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+            let modified = metadata.modified().map_err(|e| e.to_string())?;
+
+            if modified >= start_of_today_st {
+                to_move.push(path);
+            }
+        }
+    }
+
+    if !to_move.is_empty() {
+        if !target_folder.exists() {
+            fs::create_dir(&target_folder).map_err(|e| e.to_string())?;
+        }
+
+        for path in to_move {
+            let file_name = path.file_name().ok_or("Invalid file name")?;
+            let mut target_path = target_folder.join(file_name);
+
+            if target_path.exists() {
+                let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                let now_ms = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis();
+                let new_name = if ext.is_empty() {
+                    format!("{}_{}", stem, now_ms)
+                } else {
+                    format!("{}_{}.{}", stem, now_ms, ext)
+                };
+                target_path = target_folder.join(new_name);
+            }
+
+            let original_path = path.clone();
+            fs::rename(&path, &target_path).map_err(|e| e.to_string())?;
+            batch.push(MoveOp { from: original_path, to: target_path });
+            moved_count += 1;
+        }
+
+        let mut history = state.history.lock().unwrap();
+        history.batches.push(batch);
+    }
+
+    Ok(moved_count)
 }
 
 #[tauri::command]
@@ -359,7 +440,8 @@ fn main() {
             get_classification_preview,
             classify_folders,
             undo_last_operation,
-            empty_recycle_bin
+            empty_recycle_bin,
+            organize_today_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
