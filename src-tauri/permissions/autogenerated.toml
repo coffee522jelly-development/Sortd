@@ -32,3 +32,8 @@ commands.allow = ["undo_last_operation"]
 identifier = "allow-empty-recycle-bin"
 description = "Allows invoking the empty_recycle_bin command"
 commands.allow = ["empty_recycle_bin"]
+
+[[permission]]
+identifier = "allow-organize-today-files"
+description = "Allows invoking the organize_today_files command"
+commands.allow = ["organize_today_files"]
