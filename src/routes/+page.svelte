@@ -114,8 +114,13 @@
       });
       showTodayModal = false;
       todayFolderName = "";
-      status = `${count} 個のファイルを移動しました。`;
-      await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個の「今日」のファイルを整理しました。` });
+      if (count === 0) {
+        status = "フォルダのみ作成しました。";
+        await sendNotification({ title: "Sortd", body: "整理完了: 対象ファイルがなかったため、フォルダのみ作成しました。" });
+      } else {
+        status = `${count} 個のファイルを移動しました。`;
+        await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個の「今日」のファイルを整理しました。` });
+      }
     } catch (err) { status = `エラー: ${err}`; }
   }
 

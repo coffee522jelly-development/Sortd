@@ -89,11 +89,11 @@ fn organize_today_files(state: State<'_, AppState>, today_prefix: String, folder
         }
     }
 
-    if !to_move.is_empty() {
-        if !target_folder.exists() {
-            fs::create_dir(&target_folder).map_err(|e| e.to_string())?;
-        }
+    if !target_folder.exists() {
+        fs::create_dir(&target_folder).map_err(|e| e.to_string())?;
+    }
 
+    if !to_move.is_empty() {
         for path in to_move {
             let file_name = path.file_name().ok_or("Invalid file name")?;
             let mut target_path = target_folder.join(file_name);
