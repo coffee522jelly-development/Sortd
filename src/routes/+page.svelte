@@ -15,6 +15,10 @@
   let showSettings = false;
   let showTodayModal = false;
   let todayFolderName = "";
+  let showPreviewModal = false;
+  let previewTitle = "";
+  let previewItems = [];
+  let onPreviewConfirm = () => {};
   let status = "待機中";
 
   const themes = [
@@ -77,12 +81,16 @@
         await message("整理が必要なファイルはありません。", { title: "Sortd", kind: "info" });
         status = "整理不要"; return;
       }
-      const previewText = preview.map((p) => `${p.filename} -> ${p.target_dir}`).join("\n");
-      if (!await ask(`以下のファイルを整理しますか？\n\n${previewText.substring(0, 500)}...`, { title: "Sortd - プレビュー" })) return;
-      status = "整理中...";
-      const count = await invoke("organize_files", { prefix: $prefix, excluded: $excludedPaths });
-      status = `${count} 個のファイルを整理しました。`;
-      await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個のファイルを拡張子別に移動しました。` });
+
+      previewTitle = "拡張子ごとに整理";
+      previewItems = preview.map(p => ({ from: p.filename, to: p.target_dir }));
+      onPreviewConfirm = async () => {
+        status = "整理中...";
+        const count = await invoke("organize_files", { prefix: $prefix, excluded: $excludedPaths });
+        status = `${count} 個のファイルを整理しました。`;
+        await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個のファイルを拡張子別に移動しました。` });
+      };
+      showPreviewModal = true;
     } catch (err) { status = `エラー: ${err}`; }
   }
 
@@ -94,12 +102,16 @@
         await message("分類可能なフォルダは見つかりませんでした。", { title: "Sortd", kind: "info" });
         status = "分類不要"; return;
       }
-      const previewText = preview.map((p) => `${p.folder_name} -> ${p.category}`).join("\n");
-      if (!await ask(`以下のフォルダを分類しますか？\n\n${previewText.substring(0, 500)}...`, { title: "Sortd - 分類プレビュー" })) return;
-      status = "分類中...";
-      const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths });
-      status = `${count} 個のフォルダを分類しました。`;
-      await sendNotification({ title: "Sortd", body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
+
+      previewTitle = "フォルダを分類";
+      previewItems = preview.map(p => ({ from: p.folder_name, to: p.category }));
+      onPreviewConfirm = async () => {
+        status = "分類中...";
+        const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths });
+        status = `${count} 個のフォルダを分類しました。`;
+        await sendNotification({ title: "Sortd", body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
+      };
+      showPreviewModal = true;
     } catch (err) { status = `エラー: ${err}`; }
   }
 
@@ -306,6 +318,47 @@
     </div>
 
     <!-- Today's File Organization Modal -->
+    <!-- Operation Preview Modal -->
+    {#if showPreviewModal}
+      <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[320px] max-h-[80vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+          <div class="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <h3 class="text-[11px] font-bold tracking-tight">{previewTitle} のプレビュー</h3>
+            <p class="text-[9px] text-slate-500 mt-0.5">以下の移動が実行されます</p>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
+            {#each previewItems as item}
+              <div class="flex flex-col p-1.5 bg-slate-50 dark:bg-slate-900/50 rounded border border-slate-100 dark:border-slate-800/50">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="text-[9px] font-mono truncate flex-1 text-slate-600 dark:text-slate-400">{item.from}</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 text-primary opacity-50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <span class="text-[9px] font-bold truncate text-primary">{item.to}</span>
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 shrink-0">
+            <button
+              on:click={() => showPreviewModal = false}
+              class="flex-1 h-8 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] text-[10px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              キャンセル
+            </button>
+            <button
+              on:click={() => { showPreviewModal = false; onPreviewConfirm(); }}
+              class="flex-1 h-8 rounded-md bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary-hover shadow-sm"
+            >
+              実行する
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     {#if showTodayModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white dark:bg-[#09090b] w-full max-w-[240px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
@@ -377,6 +430,20 @@
   :global(.dark) .theme-teal { --theme-primary: theme('colors.teal.400'); }
   :global(.dark) .theme-sky { --theme-primary: theme('colors.sky.400'); }
   :global(.dark) .theme-lime { --theme-primary: theme('colors.lime.400'); }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.200');
+    border-radius: 10px;
+  }
+  :global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.800');
+  }
 
   .animate-in {
     animation: animate-in 0.2s ease-out;
