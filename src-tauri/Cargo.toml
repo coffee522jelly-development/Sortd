@@ -2,6 +2,10 @@
 name = "sortd"
 version = "1.0.0"
 description = "Desktop file and folder organization utility"
+
+[lib]
+name = "sortd_lib"
+path = "src/lib.rs"
 authors = ["User"]
 license = "ISC"
 edition = "2021"

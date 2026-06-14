@@ -1,8 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod lib;
-use lib::*;
+use sortd_lib::state::AppState;
+use sortd_lib::setup::setup;
+use sortd_lib::commands::organize::*;
+use sortd_lib::commands::preview::*;
+use sortd_lib::commands::system::*;
 
 fn main() {
     tauri::Builder::default()
