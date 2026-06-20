@@ -162,7 +162,7 @@
 
 <div class={$theme}>
   <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="max-w-[400px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+    <div class="max-w-[880px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}
@@ -321,7 +321,7 @@
     <!-- Operation Preview Modal -->
     {#if showPreviewModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-[#09090b] w-full max-w-[400px] max-h-[80vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[880px] max-h-[80vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
           <div class="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <h3 class="text-[11px] font-bold tracking-tight">{previewTitle} のプレビュー</h3>
             <p class="text-[9px] text-slate-500 mt-0.5">以下の移動が実行されます</p>
@@ -361,7 +361,7 @@
 
     {#if showTodayModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-[#09090b] w-full max-w-[320px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[480px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
           <div class="space-y-1 text-center">
             <h3 class="text-[11px] font-bold tracking-tight">フォルダ名の入力</h3>
             <p class="text-[9px] text-slate-500">今日更新されたファイルを整理します</p>
