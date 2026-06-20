@@ -1,5 +1,7 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { LogicalSize } from "@tauri-apps/api/dpi";
   import { sendNotification } from "@tauri-apps/plugin-notification";
   import { ask, message, open } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
@@ -20,6 +22,24 @@
   let previewItems = [];
   let onPreviewConfirm = () => {};
   let status = "待機中";
+
+  async function openSettings() {
+    showSettings = true;
+    try {
+      await getCurrentWindow().setSize(new LogicalSize(960, 580));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function closeSettings() {
+    showSettings = false;
+    try {
+      await getCurrentWindow().setSize(new LogicalSize(360, 580));
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const themes = [
     "theme-slate", "theme-rose", "theme-blue", "theme-green",
@@ -162,14 +182,13 @@
 
 <div class={$theme}>
   <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="max-w-[880px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+    <div class="{showSettings ? 'max-w-[880px]' : 'max-w-[280px]'} w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}
           <!-- Main UI -->
-          <div class="flex items-center justify-between">
-            <h1 class="text-xs font-semibold tracking-tight text-slate-900 dark:text-slate-50 uppercase">Sortd</h1>
-            <button on:click={() => showSettings = true} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50">
+          <div class="flex items-center justify-end">
+            <button on:click={openSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
@@ -246,7 +265,7 @@
         {:else}
           <!-- Settings UI -->
           <div class="flex items-center justify-between mb-2">
-            <button on:click={() => showSettings = false} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500">
+            <button on:click={closeSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <h2 class="text-xs font-semibold uppercase tracking-tight text-slate-900 dark:text-slate-50">設定</h2>
@@ -321,7 +340,7 @@
     <!-- Operation Preview Modal -->
     {#if showPreviewModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-[#09090b] w-full max-w-[880px] max-h-[80vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[320px] max-h-[80vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
           <div class="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <h3 class="text-[11px] font-bold tracking-tight">{previewTitle} のプレビュー</h3>
             <p class="text-[9px] text-slate-500 mt-0.5">以下の移動が実行されます</p>
@@ -361,7 +380,7 @@
 
     {#if showTodayModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-[#09090b] w-full max-w-[480px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[240px] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl p-4 space-y-4 animate-in fade-in zoom-in duration-200">
           <div class="space-y-1 text-center">
             <h3 class="text-[11px] font-bold tracking-tight">フォルダ名の入力</h3>
             <p class="text-[9px] text-slate-500">今日更新されたファイルを整理します</p>
