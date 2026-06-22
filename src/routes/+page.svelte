@@ -13,9 +13,37 @@
   let excludedPaths = persisted("sortd_excluded_paths", []);
   let theme = persisted("sortd_theme", "theme-slate");
 
+  const defaultRules = [
+    { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
+    { name: "UnityProject", extensions: ["unity", "prefab", "asset"] },
+    { name: "PythonProject", extensions: ["py", "ipynb"] },
+    { name: "DesignProject", extensions: ["psd", "ai", "xd", "fig", "sketch"] },
+    { name: "DocumentProject", extensions: ["docx", "pptx", "pdf", "csv"] },
+    { name: "ProgrammingProject", extensions: ["c", "cpp", "h", "hpp", "cs", "java", "go", "rs", "rb"] },
+    { name: "ProjectWorking", extensions: ["xlsx", "xls", "png"] },
+    { name: "Memo", extensions: ["txt"] }
+  ];
+  let customRules = persisted("sortd_custom_rules", defaultRules);
+
   // UI state
   let showSettings = false;
   let showTodayModal = false;
+  let newRuleName = "";
+  let newRuleExts = "";
+
+  function addCustomRule() {
+    const name = newRuleName.trim();
+    const exts = newRuleExts.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+    if (name && exts.length > 0) {
+      customRules.update(rules => [...rules, { name, extensions: exts }]);
+      newRuleName = "";
+      newRuleExts = "";
+    }
+  }
+
+  function removeCustomRule(index) {
+    customRules.update(rules => rules.filter((_, i) => i !== index));
+  }
   let todayFolderName = "";
   let showPreviewModal = false;
   let previewTitle = "";
@@ -127,7 +155,7 @@
   async function handleClassify() {
     try {
       status = "分類のプレビューを取得中...";
-      const preview = await invoke("get_classification_preview", { prefix: $prefix, excluded: $excludedPaths });
+      const preview = await invoke("get_classification_preview", { prefix: $prefix, excluded: $excludedPaths, rules: $customRules });
       if (preview.length === 0) {
         await message("分類可能なフォルダは見つかりませんでした。", { title: "Sortd", kind: "info" });
         status = "分類不要"; return;
@@ -137,7 +165,7 @@
       previewItems = preview.map(p => ({ from: p.folder_name, to: p.category }));
       onPreviewConfirm = async () => {
         status = "分類中...";
-        const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths });
+        const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths, rules: $customRules });
         status = `${count} 個のフォルダを分類しました。`;
         await sendNotification({ title: "Sortd", body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
       };
@@ -349,6 +377,45 @@
                 </div>
               </div>
             </div>
+
+            <!-- Classification Rules Section -->
+            <div class="space-y-3">
+              <span class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">分類ルール</span>
+              <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
+                <div class="max-h-[120px] overflow-y-auto space-y-1.5 min-h-[40px] mb-3">
+                  {#if $customRules.length === 0}
+                    <p class="text-[10px] text-slate-500 italic text-center py-2">ルールはありません</p>
+                  {/if}
+                  {#each $customRules as rule, i}
+                    <div class="flex items-center gap-2 group">
+                      <p class="w-1/3 text-[9px] font-bold truncate text-slate-700 dark:text-slate-300" title={rule.name}>{rule.name}</p>
+                      <p class="flex-1 text-[9px] truncate text-slate-500 font-mono" title={rule.extensions.join(', ')}>{rule.extensions.join(', ')}</p>
+                      <button on:click={() => removeCustomRule(i)} class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 h-5 w-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    bind:value={newRuleName}
+                    placeholder="例: VideoProject"
+                    class="flex h-6 w-1/3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-2 py-1 text-[9px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                  <input
+                    type="text"
+                    bind:value={newRuleExts}
+                    placeholder="拡張子 (例: mp4, mov)"
+                    class="flex h-6 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-2 py-1 text-[9px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    on:keydown={(e) => e.key === 'Enter' && addCustomRule()}
+                  />
+                  <button on:click={addCustomRule} class="inline-flex items-center justify-center rounded-md text-[9px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary-hover h-6 px-3 whitespace-nowrap">追加</button>
+                </div>
+              </div>
+            </div>
+
           </div>
         {/if}
       </div>

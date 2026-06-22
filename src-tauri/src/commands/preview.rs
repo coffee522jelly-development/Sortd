@@ -1,5 +1,5 @@
 use std::fs;
-use crate::models::{FilePreview, FolderPreview};
+use crate::models::{FilePreview, FolderPreview, CategoryRule};
 use crate::utils::{is_excluded, get_category_for_folder};
 
 /// 拡張子ごとの整理のプレビューを取得するコマンド
@@ -26,7 +26,7 @@ pub fn get_organization_preview(prefix: String, excluded: Vec<String>) -> Result
 
 /// フォルダ分類のプレビューを取得するコマンド
 #[tauri::command]
-pub fn get_classification_preview(prefix: String, excluded: Vec<String>) -> Result<Vec<FolderPreview>, String> {
+pub fn get_classification_preview(prefix: String, excluded: Vec<String>, rules: Vec<CategoryRule>) -> Result<Vec<FolderPreview>, String> {
     let desktop = dirs::desktop_dir().ok_or("デスクトップディレクトリが見つかりません")?;
     let mut preview = Vec::new();
     let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
@@ -38,7 +38,7 @@ pub fn get_classification_preview(prefix: String, excluded: Vec<String>) -> Resu
             if is_excluded(&path, &excluded) { continue; }
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
             if name.starts_with(&prefix) { continue; }
-            let category = get_category_for_folder(&path, &prefix)?;
+            let category = get_category_for_folder(&path, &prefix, &rules)?;
             preview.push(FolderPreview { folder_name: name.to_string(), category });
         }
     }
