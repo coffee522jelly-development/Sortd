@@ -93,6 +93,16 @@
     } catch (err) { status = `エラー: ${err}`; }
   }
 
+  async function handleDeleteDuplicates() {
+    if (!await ask("重複ファイル（「〜のコピー」「〜 (1)」など）を削除しますか？\n※元のファイルが存在する場合のみ削除されます。", { title: "Sortd", kind: "warning" })) return;
+    try {
+      status = "重複ファイルを削除中...";
+      const count = await invoke("delete_duplicate_files", { excluded: $excludedPaths });
+      status = `${count} 個の重複ファイルを削除しました。`;
+      await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個の重複ファイルを削除しました。` });
+    } catch (err) { status = `エラー: ${err}`; }
+  }
+
   async function handleOrganize() {
     try {
       status = "プレビューを取得中...";
@@ -238,6 +248,14 @@
 
             <!-- Maintenance Group -->
             <div class="grid gap-3">
+              <button
+                on:click={handleDeleteDuplicates}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" x2="15" y1="15" y2="15"/><line x1="12" x2="12" y1="12" y2="18"/></svg>
+                <span>重複ファイルを削除</span>
+              </button>
+
               <button
                 on:click={handleEmptyRecycleBin}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"

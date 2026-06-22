@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command;
+use regex::Regex;
 use tauri::State;
 use crate::state::AppState;
 use crate::utils::is_excluded;
@@ -49,6 +50,46 @@ pub fn empty_recycle_bin() -> Result<u64, String> {
     {
         Err("ごみ箱を空にする機能はWindowsのみ対応しています。".to_string())
     }
+}
+
+/// 重複ファイル（「〜のコピー」「〜 (1)」など）を削除するコマンド
+#[tauri::command]
+pub fn delete_duplicate_files(excluded: Vec<String>) -> Result<usize, String> {
+    let desktop = dirs::desktop_dir().ok_or("デスクトップディレクトリが見つかりません")?;
+    let mut deleted_count = 0;
+    let entries = fs::read_dir(&desktop).map_err(|e| e.to_string())?;
+
+    // パターン1: "ファイル名 - コピー.ext" や "ファイル名 のコピー.ext"
+    // パターン2: "ファイル名 (1).ext" など
+    let re_copy = Regex::new(r"^(.*?)(?:\s-\sコピー|\sのコピー|\s\(\d+\))(\.[^.]+)$").unwrap();
+
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+
+        if path.is_file() {
+            if is_excluded(&path, &excluded) { continue; }
+
+            if let Some(file_name_os) = path.file_name() {
+                if let Some(file_name) = file_name_os.to_str() {
+                    if let Some(caps) = re_copy.captures(file_name) {
+                        let base_name = caps.get(1).map_or("", |m| m.as_str());
+                        let extension = caps.get(2).map_or("", |m| m.as_str());
+                        let original_file_name = format!("{}{}", base_name, extension);
+                        let original_path = desktop.join(&original_file_name);
+
+                        // オリジナルのファイルが存在する場合のみ重複とみなして削除
+                        if original_path.exists() && original_path.is_file() {
+                            if fs::remove_file(&path).is_ok() {
+                                deleted_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(deleted_count)
 }
 
 /// 最後に実行した移動操作を元に戻すコマンド
