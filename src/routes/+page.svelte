@@ -44,6 +44,41 @@
   function removeCustomRule(index) {
     customRules.update(rules => rules.filter((_, i) => i !== index));
   }
+
+  function exportRules() {
+    const dataStr = JSON.stringify($customRules, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sortd_rules.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importRules(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const rules = JSON.parse(e.target.result);
+        if (Array.isArray(rules)) {
+          customRules.set(rules);
+          await message("ルールをインポートしました。", { title: "Sortd", kind: "info" });
+        } else {
+          throw new Error("無効なフォーマットです");
+        }
+      } catch (err) {
+        await message(`インポートに失敗しました: ${err}`, { title: "Sortd", kind: "error" });
+      }
+      event.target.value = ''; // Reset input
+    };
+    reader.readAsText(file);
+  }
+
   let todayFolderName = "";
   let showPreviewModal = false;
   let previewTitle = "";
@@ -380,7 +415,16 @@
 
             <!-- Classification Rules Section -->
             <div class="space-y-3">
-              <span class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">分類ルール</span>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">分類ルール</span>
+                <div class="flex gap-2">
+                  <label class="cursor-pointer inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">
+                    インポート
+                    <input type="file" accept=".json" class="hidden" on:change={importRules} />
+                  </label>
+                  <button on:click={exportRules} class="inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">エクスポート</button>
+                </div>
+              </div>
               <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
                 <div class="max-h-[120px] overflow-y-auto space-y-1.5 min-h-[40px] mb-3">
                   {#if $customRules.length === 0}

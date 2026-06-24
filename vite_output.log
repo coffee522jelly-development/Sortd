@@ -1,0 +1,13 @@
+
+> sortd@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 805 ms
+
+  ➜  Local:   http://localhost:1420/
+  ➜  Network: http://192.168.0.2:1420/
+2:59:21 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:379:14 A11y: A form label must be associated with a control.
+2:59:21 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:522:12 A11y: Avoid using autofocus
+2:59:22 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:379:14 A11y: A form label must be associated with a control.
+2:59:22 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:522:12 A11y: Avoid using autofocus
