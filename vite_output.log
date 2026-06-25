@@ -3,11 +3,20 @@
 > vite
 
 
-  VITE v5.4.21  ready in 805 ms
+  VITE v5.4.21  ready in 1344 ms
 
   ➜  Local:   http://localhost:1420/
   ➜  Network: http://192.168.0.2:1420/
-2:59:21 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:379:14 A11y: A form label must be associated with a control.
-2:59:21 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:522:12 A11y: Avoid using autofocus
-2:59:22 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:379:14 A11y: A form label must be associated with a control.
-2:59:22 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:522:12 A11y: Avoid using autofocus
+3:52:36 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:382:14 A11y: A form label must be associated with a control.
+3:52:36 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:545:12 A11y: Avoid using autofocus
+3:52:38 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:382:14 A11y: A form label must be associated with a control.
+3:52:38 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:545:12 A11y: Avoid using autofocus
+3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/0.js
+3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/1.js
+3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/2.js
+3:56:12 AM [vite] page reload .svelte-kit/generated/client/app.js
+3:56:12 AM [vite] page reload .svelte-kit/generated/client/matchers.js
+3:56:12 AM [vite] page reload .svelte-kit/generated/server/internal.js
+3:56:19 AM [vite] page reload build/index.html
+3:56:20 AM [vite] page reload build/index.html
+3:56:23 AM [vite] page reload src-tauri/target/debug/build/sortd-31808a87d6801577/out/tauri-codegen-assets/4907db642d6fc1a3aa4f68e1286059609f07e3011f57dfa3cfb3f96bb2f93d52.html

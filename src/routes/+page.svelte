@@ -12,6 +12,7 @@
   let todayPrefix = persisted("sortd_today_prefix", "▶");
   let excludedPaths = persisted("sortd_excluded_paths", []);
   let theme = persisted("sortd_theme", "theme-slate");
+  let customColor = persisted("sortd_custom_color", "");
 
   const defaultRules = [
     { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
@@ -88,27 +89,29 @@
 
   async function openSettings() {
     showSettings = true;
-    try {
-      await getCurrentWindow().setSize(new LogicalSize(960, 580));
-    } catch (e) {
-      console.error(e);
-    }
   }
 
   async function closeSettings() {
     showSettings = false;
-    try {
-      await getCurrentWindow().setSize(new LogicalSize(360, 580));
-    } catch (e) {
-      console.error(e);
-    }
   }
 
-  const themes = [
-    "theme-slate", "theme-rose", "theme-blue", "theme-green",
-    "theme-orange", "theme-purple", "theme-amber", "theme-emerald",
-    "theme-cyan", "theme-indigo", "theme-violet", "theme-pink",
-    "theme-red", "theme-teal", "theme-sky", "theme-lime"
+  const presetColors = [
+    { name: "Slate", value: "#475569", class: "theme-slate" },
+    { name: "Rose", value: "#e11d48", class: "theme-rose" },
+    { name: "Blue", value: "#2563eb", class: "theme-blue" },
+    { name: "Green", value: "#16a34a", class: "theme-green" },
+    { name: "Orange", value: "#ea580c", class: "theme-orange" },
+    { name: "Purple", value: "#9333ea", class: "theme-purple" },
+    { name: "Amber", value: "#d97706", class: "theme-amber" },
+    { name: "Emerald", value: "#059669", class: "theme-emerald" },
+    { name: "Cyan", value: "#0891b2", class: "theme-cyan" },
+    { name: "Indigo", value: "#4f46e5", class: "theme-indigo" },
+    { name: "Violet", value: "#7c3aed", class: "theme-violet" },
+    { name: "Pink", value: "#db2777", class: "theme-pink" },
+    { name: "Red", value: "#dc2626", class: "theme-red" },
+    { name: "Teal", value: "#0d9488", class: "theme-teal" },
+    { name: "Sky", value: "#0284c7", class: "theme-sky" },
+    { name: "Lime", value: "#65a30d", class: "theme-lime" }
   ];
 
   onMount(() => {
@@ -253,9 +256,9 @@
   }
 </script>
 
-<div class={$theme}>
+<div class={$theme} style={$customColor ? `--theme-primary: ${$customColor}; --theme-primary-hover: ${$customColor}dd;` : ""}>
   <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="{showSettings ? 'max-w-[880px]' : 'max-w-[280px]'} w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+    <div class="max-w-[880px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}
@@ -266,9 +269,8 @@
             </button>
           </div>
 
-          <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
             <!-- Desktop Organization Group -->
-            <div class="grid gap-3">
               <button
                 on:click={handleDelete}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
@@ -310,7 +312,7 @@
             </div>
 
             <!-- Maintenance Group -->
-            <div class="grid gap-3">
+            <div class="grid grid-cols-2 gap-4">
               <button
                 on:click={handleDeleteDuplicates}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
@@ -326,7 +328,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 <span>ごみ箱を空にする</span>
               </button>
+            </div>
 
+            <div class="flex justify-center">
               <button
                 on:click={handleUndo}
                 class="inline-flex items-center justify-center gap-2 mt-2 whitespace-nowrap text-[10px] font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-slate-400 dark:text-slate-600 hover:text-primary uppercase tracking-wider underline underline-offset-4 decoration-slate-200 dark:decoration-slate-800"
@@ -335,7 +339,6 @@
                 元に戻す
               </button>
             </div>
-          </div>
 
           <!-- Status Bar -->
           <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -377,13 +380,33 @@
 
             <div class="space-y-3">
               <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">テーマ</label>
-              <div class="grid grid-cols-8 gap-2">
-                {#each themes as t}
-                  <button
-                    on:click={() => theme.set(t)}
-                    class="w-4 h-4 rounded-full border border-slate-200 dark:border-slate-800 transition-all {t} bg-primary { $theme === t ? 'ring-2 ring-ring ring-offset-2 ring-offset-white dark:ring-offset-[#09090b] scale-110' : 'hover:scale-110' }"
-                  ></button>
-                {/each}
+              <div class="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={$customColor || presetColors.find(p => p.class === $theme)?.value || "#475569"}
+                  on:input={(e) => {
+                    customColor.set(e.target.value);
+                    theme.set("theme-custom");
+                  }}
+                  class="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                  title="カスタムカラーを選択"
+                />
+                <select
+                  class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={$theme}
+                  on:change={(e) => {
+                    const val = e.target.value;
+                    if (val !== "theme-custom") {
+                      customColor.set("");
+                      theme.set(val);
+                    }
+                  }}
+                >
+                  <option value="theme-custom" disabled hidden={$theme !== "theme-custom"}>カスタムカラー</option>
+                  {#each presetColors as p}
+                    <option value={p.class}>{p.name}</option>
+                  {/each}
+                </select>
               </div>
             </div>
 
