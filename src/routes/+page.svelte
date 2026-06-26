@@ -1,8 +1,6 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
-  import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { sendNotification } from "@tauri-apps/plugin-notification";
+      import { sendNotification } from "@tauri-apps/plugin-notification";
   import { ask, message, open } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
   import { persisted } from "svelte-persisted-store";
