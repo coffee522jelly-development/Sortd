@@ -11,7 +11,7 @@
     "windows": [
       {
         "title": "Sortd",
-        "width": 960,
+        "width": 1024,
         "height": 580,
         "resizable": false,
         "fullscreen": false

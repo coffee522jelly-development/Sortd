@@ -256,7 +256,7 @@
 
 <div class={$theme} style={$customColor ? `--theme-primary: ${$customColor}; --theme-primary-hover: ${$customColor}dd;` : ""}>
   <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="max-w-[880px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+    <div class="max-w-[960px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}
@@ -418,7 +418,7 @@
               </div>
 
               <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
-                <div class="max-h-[120px] overflow-y-auto space-y-1.5 min-h-[40px]">
+                <div class="max-h-[120px] overflow-y-auto space-y-1.5 custom-scrollbar min-h-[40px]">
                   {#if $excludedPaths.length === 0}
                     <p class="text-[10px] text-slate-500 italic text-center py-2">除外された項目はありません</p>
                   {/if}
@@ -447,7 +447,7 @@
                 </div>
               </div>
               <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
-                <div class="max-h-[120px] overflow-y-auto space-y-1.5 min-h-[40px] mb-3">
+                <div class="max-h-[120px] overflow-y-auto space-y-1.5 custom-scrollbar min-h-[40px] mb-3">
                   {#if $customRules.length === 0}
                     <p class="text-[10px] text-slate-500 italic text-center py-2">ルールはありません</p>
                   {/if}
@@ -601,17 +601,23 @@
   :global(.dark) .theme-lime { --theme-primary: theme('colors.lime.400'); }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 2px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: theme('colors.slate.200');
+    background: theme('colors.slate.300');
     border-radius: 10px;
   }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.400');
+  }
   :global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: theme('colors.slate.800');
+    background: theme('colors.slate.700');
+  }
+  :global(.dark) .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.600');
   }
 
   .animate-in {

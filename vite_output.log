@@ -3,30 +3,20 @@
 > vite
 
 
-  VITE v5.4.21  ready in 1344 ms
+  VITE v5.4.21  ready in 1327 ms
 
   ➜  Local:   http://localhost:1420/
   ➜  Network: http://192.168.0.2:1420/
-3:52:36 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:382:14 A11y: A form label must be associated with a control.
-3:52:36 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:545:12 A11y: Avoid using autofocus
-3:52:38 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:382:14 A11y: A form label must be associated with a control.
-3:52:38 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:545:12 A11y: Avoid using autofocus
-3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/0.js
-3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/1.js
-3:56:12 AM [vite] page reload .svelte-kit/generated/client/nodes/2.js
-3:56:12 AM [vite] page reload .svelte-kit/generated/client/app.js
-3:56:12 AM [vite] page reload .svelte-kit/generated/client/matchers.js
-3:56:12 AM [vite] page reload .svelte-kit/generated/server/internal.js
-3:56:19 AM [vite] page reload build/index.html
-3:56:20 AM [vite] page reload build/index.html
-3:56:23 AM [vite] page reload src-tauri/target/debug/build/sortd-31808a87d6801577/out/tauri-codegen-assets/4907db642d6fc1a3aa4f68e1286059609f07e3011f57dfa3cfb3f96bb2f93d52.html
-4:11:45 AM [vite] hmr update /src/routes/+page.svelte, /src/app.css
-4:12:24 AM [vite] page reload .svelte-kit/generated/client/nodes/0.js
-4:12:24 AM [vite] page reload .svelte-kit/generated/client/nodes/1.js
-4:12:24 AM [vite] page reload .svelte-kit/generated/client/nodes/2.js
-4:12:24 AM [vite] page reload .svelte-kit/generated/client/app.js
-4:12:24 AM [vite] page reload .svelte-kit/generated/client/matchers.js
-4:12:24 AM [vite] page reload .svelte-kit/generated/server/internal.js
-4:12:30 AM [vite] page reload build/index.html
-4:12:31 AM [vite] page reload build/index.html
-4:13:48 AM [vite] page reload src-tauri/target/debug/build/sortd-31808a87d6801577/out/tauri-codegen-assets/4159e19c1e4ddc69f68c0f36d5dadd0aaec04428a99bf1497ce62a530db2480b.html
+3:18:52 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:380:14 A11y: A form label must be associated with a control.
+3:18:52 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:543:12 A11y: Avoid using autofocus
+3:18:54 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:380:14 A11y: A form label must be associated with a control.
+3:18:54 PM [vite-plugin-svelte] /app/src/routes/+page.svelte:543:12 A11y: Avoid using autofocus
+3:23:04 PM [vite] page reload .svelte-kit/generated/client/nodes/0.js
+3:23:04 PM [vite] page reload .svelte-kit/generated/client/nodes/1.js
+3:23:04 PM [vite] page reload .svelte-kit/generated/client/nodes/2.js
+3:23:04 PM [vite] page reload .svelte-kit/generated/client/app.js
+3:23:04 PM [vite] page reload .svelte-kit/generated/client/matchers.js
+3:23:04 PM [vite] page reload .svelte-kit/generated/server/internal.js
+3:23:11 PM [vite] page reload build/index.html
+3:23:12 PM [vite] page reload build/index.html
+3:23:15 PM [vite] page reload src-tauri/target/debug/build/sortd-31808a87d6801577/out/tauri-codegen-assets/533644743a4a8e67603c2289e8a51025c3ff4bc356de9104d356f878975cd7cf.html
