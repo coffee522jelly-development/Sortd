@@ -26,7 +26,8 @@ pub fn run() {
             classify_folders,
             undo_last_operation,
             empty_recycle_bin,
-            organize_today_files
+            organize_today_files,
+            delete_duplicate_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,6 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
-  import { sendNotification } from "@tauri-apps/plugin-notification";
+      import { sendNotification } from "@tauri-apps/plugin-notification";
   import { ask, message, open } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
   import { persisted } from "svelte-persisted-store";
@@ -10,10 +10,81 @@
   let todayPrefix = persisted("sortd_today_prefix", "▶");
   let excludedPaths = persisted("sortd_excluded_paths", []);
   let theme = persisted("sortd_theme", "theme-slate");
+  let customColor = persisted("sortd_custom_color", "");
+  let colorMode = persisted("sortd_color_mode", "system"); // "system", "light", "dark"
+
+  const defaultRules = [
+    { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
+    { name: "UnityProject", extensions: ["unity", "prefab", "asset"] },
+    { name: "PythonProject", extensions: ["py", "ipynb"] },
+    { name: "DesignProject", extensions: ["psd", "ai", "xd", "fig", "sketch"] },
+    { name: "DocumentProject", extensions: ["docx", "pptx", "pdf", "csv"] },
+    { name: "ProgrammingProject", extensions: ["c", "cpp", "h", "hpp", "cs", "java", "go", "rs", "rb"] },
+    { name: "ProjectWorking", extensions: ["xlsx", "xls", "png"] },
+    { name: "Memo", extensions: ["txt"] }
+  ];
+  let customRules = persisted("sortd_custom_rules", defaultRules);
 
   // UI state
   let showSettings = false;
   let showTodayModal = false;
+  let newRuleName = "";
+  let newRuleExts = "";
+
+  function cycleColorMode() {
+    if ($colorMode === "system") colorMode.set("light");
+    else if ($colorMode === "light") colorMode.set("dark");
+    else colorMode.set("system");
+  }
+
+  function addCustomRule() {
+    const name = newRuleName.trim();
+    const exts = newRuleExts.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+    if (name && exts.length > 0) {
+      customRules.update(rules => [...rules, { name, extensions: exts }]);
+      newRuleName = "";
+      newRuleExts = "";
+    }
+  }
+
+  function removeCustomRule(index) {
+    customRules.update(rules => rules.filter((_, i) => i !== index));
+  }
+
+  function exportRules() {
+    const dataStr = JSON.stringify($customRules, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sortd_rules.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importRules(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const rules = JSON.parse(e.target.result);
+        if (Array.isArray(rules)) {
+          customRules.set(rules);
+          await message("ルールをインポートしました。", { title: "Sortd", kind: "info" });
+        } else {
+          throw new Error("無効なフォーマットです");
+        }
+      } catch (err) {
+        await message(`インポートに失敗しました: ${err}`, { title: "Sortd", kind: "error" });
+      }
+      event.target.value = ''; // Reset input
+    };
+    reader.readAsText(file);
+  }
+
   let todayFolderName = "";
   let showPreviewModal = false;
   let previewTitle = "";
@@ -21,20 +92,59 @@
   let onPreviewConfirm = () => {};
   let status = "待機中";
 
-  const themes = [
-    "theme-slate", "theme-rose", "theme-blue", "theme-green",
-    "theme-orange", "theme-purple", "theme-amber", "theme-emerald",
-    "theme-cyan", "theme-indigo", "theme-violet", "theme-pink",
-    "theme-red", "theme-teal", "theme-sky", "theme-lime"
+  async function openSettings() {
+    showSettings = true;
+  }
+
+  async function closeSettings() {
+    showSettings = false;
+  }
+
+  const presetColors = [
+    { name: "Slate", value: "#475569", class: "theme-slate" },
+    { name: "Rose", value: "#e11d48", class: "theme-rose" },
+    { name: "Blue", value: "#2563eb", class: "theme-blue" },
+    { name: "Green", value: "#16a34a", class: "theme-green" },
+    { name: "Orange", value: "#ea580c", class: "theme-orange" },
+    { name: "Purple", value: "#9333ea", class: "theme-purple" },
+    { name: "Amber", value: "#d97706", class: "theme-amber" },
+    { name: "Emerald", value: "#059669", class: "theme-emerald" },
+    { name: "Cyan", value: "#0891b2", class: "theme-cyan" },
+    { name: "Indigo", value: "#4f46e5", class: "theme-indigo" },
+    { name: "Violet", value: "#7c3aed", class: "theme-violet" },
+    { name: "Pink", value: "#db2777", class: "theme-pink" },
+    { name: "Red", value: "#dc2626", class: "theme-red" },
+    { name: "Teal", value: "#0d9488", class: "theme-teal" },
+    { name: "Sky", value: "#0284c7", class: "theme-sky" },
+    { name: "Lime", value: "#65a30d", class: "theme-lime" }
   ];
 
+  let mediaQuery;
+
+  function applyThemeMode() {
+    let isDark;
+    if ($colorMode === "dark") {
+      isDark = true;
+    } else if ($colorMode === "light") {
+      isDark = false;
+    } else {
+      isDark = mediaQuery ? mediaQuery.matches : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    document.documentElement.classList.toggle("dark", isDark);
+  }
+
+  $: if ($colorMode) {
+    if (typeof document !== "undefined") applyThemeMode();
+  }
+
   onMount(() => {
-    const updateTheme = () => {
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.toggle("dark", isDark);
+    mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = () => {
+      if ($colorMode === "system") applyThemeMode();
     };
-    updateTheme();
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateTheme);
+    applyThemeMode();
+    mediaQuery.addEventListener("change", handleMediaChange);
+    return () => mediaQuery.removeEventListener("change", handleMediaChange);
   });
 
   function formatSize(bytes) {
@@ -73,6 +183,16 @@
     } catch (err) { status = `エラー: ${err}`; }
   }
 
+  async function handleDeleteDuplicates() {
+    if (!await ask("重複ファイル（「〜のコピー」「〜 (1)」など）を削除しますか？\n※元のファイルが存在する場合のみ削除されます。", { title: "Sortd", kind: "warning" })) return;
+    try {
+      status = "重複ファイルを削除中...";
+      const count = await invoke("delete_duplicate_files", { excluded: $excludedPaths });
+      status = `${count} 個の重複ファイルを削除しました。`;
+      await sendNotification({ title: "Sortd", body: `整理完了: ${count} 個の重複ファイルを削除しました。` });
+    } catch (err) { status = `エラー: ${err}`; }
+  }
+
   async function handleOrganize() {
     try {
       status = "プレビューを取得中...";
@@ -97,7 +217,7 @@
   async function handleClassify() {
     try {
       status = "分類のプレビューを取得中...";
-      const preview = await invoke("get_classification_preview", { prefix: $prefix, excluded: $excludedPaths });
+      const preview = await invoke("get_classification_preview", { prefix: $prefix, excluded: $excludedPaths, rules: $customRules });
       if (preview.length === 0) {
         await message("分類可能なフォルダは見つかりませんでした。", { title: "Sortd", kind: "info" });
         status = "分類不要"; return;
@@ -107,7 +227,7 @@
       previewItems = preview.map(p => ({ from: p.folder_name, to: p.category }));
       onPreviewConfirm = async () => {
         status = "分類中...";
-        const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths });
+        const count = await invoke("classify_folders", { prefix: $prefix, excluded: $excludedPaths, rules: $customRules });
         status = `${count} 個のフォルダを分類しました。`;
         await sendNotification({ title: "Sortd", body: `分類完了: ${count} 個のフォルダをプロジェクト種別ごとに整理しました。` });
       };
@@ -160,23 +280,30 @@
   }
 </script>
 
-<div class={$theme}>
+<div class={$theme} style={$customColor ? `--theme-primary: ${$customColor}; --theme-primary-hover: ${$customColor}dd;` : ""}>
   <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="max-w-[280px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+    <div class="max-w-[960px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}
           <!-- Main UI -->
-          <div class="flex items-center justify-between">
-            <h1 class="text-xs font-semibold tracking-tight text-slate-900 dark:text-slate-50 uppercase">Sortd</h1>
-            <button on:click={() => showSettings = true} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50">
+          <div class="flex items-center justify-end gap-1">
+            <button on:click={cycleColorMode} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50" title="外観モードの切り替え">
+              {#if $colorMode === "light"}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              {:else if $colorMode === "dark"}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              {:else}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+              {/if}
+            </button>
+            <button on:click={openSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50" title="設定">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
 
-          <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
             <!-- Desktop Organization Group -->
-            <div class="grid gap-3">
               <button
                 on:click={handleDelete}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
@@ -218,7 +345,15 @@
             </div>
 
             <!-- Maintenance Group -->
-            <div class="grid gap-3">
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                on:click={handleDeleteDuplicates}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" x2="15" y1="15" y2="15"/><line x1="12" x2="12" y1="12" y2="18"/></svg>
+                <span>重複ファイルを削除</span>
+              </button>
+
               <button
                 on:click={handleEmptyRecycleBin}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-2"
@@ -226,7 +361,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 <span>ごみ箱を空にする</span>
               </button>
+            </div>
 
+            <div class="flex justify-center">
               <button
                 on:click={handleUndo}
                 class="inline-flex items-center justify-center gap-2 mt-2 whitespace-nowrap text-[10px] font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-slate-400 dark:text-slate-600 hover:text-primary uppercase tracking-wider underline underline-offset-4 decoration-slate-200 dark:decoration-slate-800"
@@ -235,7 +372,6 @@
                 元に戻す
               </button>
             </div>
-          </div>
 
           <!-- Status Bar -->
           <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -246,7 +382,7 @@
         {:else}
           <!-- Settings UI -->
           <div class="flex items-center justify-between mb-2">
-            <button on:click={() => showSettings = false} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500">
+            <button on:click={closeSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <h2 class="text-xs font-semibold uppercase tracking-tight text-slate-900 dark:text-slate-50">設定</h2>
@@ -275,15 +411,49 @@
               </div>
             </div>
 
-            <div class="space-y-3">
-              <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">テーマ</label>
-              <div class="grid grid-cols-8 gap-2">
-                {#each themes as t}
-                  <button
-                    on:click={() => theme.set(t)}
-                    class="w-4 h-4 rounded-full border border-slate-200 dark:border-slate-800 transition-all {t} bg-primary { $theme === t ? 'ring-2 ring-ring ring-offset-2 ring-offset-white dark:ring-offset-[#09090b] scale-110' : 'hover:scale-110' }"
-                  ></button>
-                {/each}
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-3">
+                <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">外観モード</label>
+                <select
+                  class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  bind:value={$colorMode}
+                >
+                  <option value="system">システム同期</option>
+                  <option value="light">ライトモード</option>
+                  <option value="dark">ダークモード</option>
+                </select>
+              </div>
+
+              <div class="space-y-3">
+                <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">テーマカラー</label>
+                <div class="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={$customColor || presetColors.find(p => p.class === $theme)?.value || "#475569"}
+                  on:input={(e) => {
+                    customColor.set(e.target.value);
+                    theme.set("theme-custom");
+                  }}
+                  class="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                  title="カスタムカラーを選択"
+                />
+                <select
+                  class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={$theme}
+                  on:change={(e) => {
+                    const val = e.target.value;
+                    if (val !== "theme-custom") {
+                      customColor.set("");
+                      theme.set(val);
+                    }
+                  }}
+                >
+                  <option value="theme-custom" disabled hidden={$theme !== "theme-custom"}>カスタムカラー</option>
+                  {#each presetColors as p}
+                    <option value={p.class}>{p.name}</option>
+                  {/each}
+                </select>
+              </div>
               </div>
             </div>
 
@@ -297,7 +467,7 @@
               </div>
 
               <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
-                <div class="max-h-[120px] overflow-y-auto space-y-1.5 min-h-[40px]">
+                <div class="max-h-[120px] overflow-y-auto space-y-1.5 custom-scrollbar min-h-[40px]">
                   {#if $excludedPaths.length === 0}
                     <p class="text-[10px] text-slate-500 italic text-center py-2">除外された項目はありません</p>
                   {/if}
@@ -312,6 +482,54 @@
                 </div>
               </div>
             </div>
+
+            <!-- Classification Rules Section -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">分類ルール</span>
+                <div class="flex gap-2">
+                  <label class="cursor-pointer inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">
+                    インポート
+                    <input type="file" accept=".json" class="hidden" on:change={importRules} />
+                  </label>
+                  <button on:click={exportRules} class="inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">エクスポート</button>
+                </div>
+              </div>
+              <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
+                <div class="max-h-[120px] overflow-y-auto space-y-1.5 custom-scrollbar min-h-[40px] mb-3">
+                  {#if $customRules.length === 0}
+                    <p class="text-[10px] text-slate-500 italic text-center py-2">ルールはありません</p>
+                  {/if}
+                  {#each $customRules as rule, i}
+                    <div class="flex items-center gap-2 group">
+                      <p class="w-1/3 text-[9px] font-bold truncate text-slate-700 dark:text-slate-300" title={rule.name}>{rule.name}</p>
+                      <p class="flex-1 text-[9px] truncate text-slate-500 font-mono" title={rule.extensions.join(', ')}>{rule.extensions.join(', ')}</p>
+                      <button on:click={() => removeCustomRule(i)} class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 h-5 w-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    bind:value={newRuleName}
+                    placeholder="例: VideoProject"
+                    class="flex h-6 w-1/3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-2 py-1 text-[9px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                  <input
+                    type="text"
+                    bind:value={newRuleExts}
+                    placeholder="拡張子 (例: mp4, mov)"
+                    class="flex h-6 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-2 py-1 text-[9px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    on:keydown={(e) => e.key === 'Enter' && addCustomRule()}
+                  />
+                  <button on:click={addCustomRule} class="inline-flex items-center justify-center rounded-md text-[9px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary-hover h-6 px-3 whitespace-nowrap">追加</button>
+                </div>
+              </div>
+            </div>
+
           </div>
         {/if}
       </div>
@@ -432,17 +650,23 @@
   :global(.dark) .theme-lime { --theme-primary: theme('colors.lime.400'); }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 2px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: theme('colors.slate.200');
+    background: theme('colors.slate.300');
     border-radius: 10px;
   }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.400');
+  }
   :global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: theme('colors.slate.800');
+    background: theme('colors.slate.700');
+  }
+  :global(.dark) .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: theme('colors.slate.600');
   }
 
   .animate-in {

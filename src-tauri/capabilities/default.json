@@ -15,7 +15,9 @@
     "allow-undo-last-operation",
     "allow-empty-recycle-bin",
     "allow-organize-today-files",
+    "allow-delete-duplicate-files",
     "notification:default",
-    "dialog:default"
+    "dialog:default",
+    "core:window:default"
   ]
 }

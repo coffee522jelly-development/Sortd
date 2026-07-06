@@ -20,3 +20,10 @@ pub struct MoveOp {
     pub from: PathBuf,
     pub to: PathBuf,
 }
+
+/// カスタム分類ルール用データ構造
+#[derive(Serialize, serde::Deserialize, Clone)]
+pub struct CategoryRule {
+    pub name: String,
+    pub extensions: Vec<String>,
+}

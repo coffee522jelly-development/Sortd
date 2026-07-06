@@ -2,7 +2,7 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 use chrono::{Local, Datelike};
-use crate::models::MoveOp;
+use crate::models::{MoveOp, CategoryRule};
 use crate::state::AppState;
 use crate::utils::{is_excluded, get_category_for_folder};
 
@@ -105,7 +105,7 @@ pub fn organize_files(state: State<'_, AppState>, prefix: String, excluded: Vec<
 
 /// フォルダを内容に応じて分類するコマンド
 #[tauri::command]
-pub fn classify_folders(state: State<'_, AppState>, prefix: String, excluded: Vec<String>) -> Result<usize, String> {
+pub fn classify_folders(state: State<'_, AppState>, prefix: String, excluded: Vec<String>, rules: Vec<CategoryRule>) -> Result<usize, String> {
     let desktop = dirs::desktop_dir().ok_or("デスクトップディレクトリが見つかりません")?;
     let mut moved_count = 0;
     let mut batch = Vec::new();
@@ -118,7 +118,7 @@ pub fn classify_folders(state: State<'_, AppState>, prefix: String, excluded: Ve
             if is_excluded(&path, &excluded) { continue; }
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
             if name.starts_with(&prefix) { continue; }
-            let category = get_category_for_folder(&path, &prefix)?;
+            let category = get_category_for_folder(&path, &prefix, &rules)?;
             let target_folder = desktop.join(category);
             if !target_folder.exists() { fs::create_dir(&target_folder).map_err(|e| e.to_string())?; }
             let mut target_path = target_folder.join(name);
