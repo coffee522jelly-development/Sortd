@@ -11,6 +11,7 @@
   let excludedPaths = persisted("sortd_excluded_paths", []);
   let theme = persisted("sortd_theme", "theme-slate");
   let customColor = persisted("sortd_custom_color", "");
+  let colorMode = persisted("sortd_color_mode", "system"); // "system", "light", "dark"
 
   const defaultRules = [
     { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
@@ -29,6 +30,12 @@
   let showTodayModal = false;
   let newRuleName = "";
   let newRuleExts = "";
+
+  function cycleColorMode() {
+    if ($colorMode === "system") colorMode.set("light");
+    else if ($colorMode === "light") colorMode.set("dark");
+    else colorMode.set("system");
+  }
 
   function addCustomRule() {
     const name = newRuleName.trim();
@@ -112,13 +119,32 @@
     { name: "Lime", value: "#65a30d", class: "theme-lime" }
   ];
 
+  let mediaQuery;
+
+  function applyThemeMode() {
+    let isDark;
+    if ($colorMode === "dark") {
+      isDark = true;
+    } else if ($colorMode === "light") {
+      isDark = false;
+    } else {
+      isDark = mediaQuery ? mediaQuery.matches : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    document.documentElement.classList.toggle("dark", isDark);
+  }
+
+  $: if ($colorMode) {
+    if (typeof document !== "undefined") applyThemeMode();
+  }
+
   onMount(() => {
-    const updateTheme = () => {
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.toggle("dark", isDark);
+    mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = () => {
+      if ($colorMode === "system") applyThemeMode();
     };
-    updateTheme();
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateTheme);
+    applyThemeMode();
+    mediaQuery.addEventListener("change", handleMediaChange);
+    return () => mediaQuery.removeEventListener("change", handleMediaChange);
   });
 
   function formatSize(bytes) {
@@ -261,8 +287,17 @@
 
         {#if !showSettings}
           <!-- Main UI -->
-          <div class="flex items-center justify-end">
-            <button on:click={openSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50">
+          <div class="flex items-center justify-end gap-1">
+            <button on:click={cycleColorMode} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50" title="外観モードの切り替え">
+              {#if $colorMode === "light"}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              {:else if $colorMode === "dark"}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              {:else}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+              {/if}
+            </button>
+            <button on:click={openSettings} class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-slate-50" title="設定">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
@@ -376,9 +411,22 @@
               </div>
             </div>
 
-            <div class="space-y-3">
-              <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">テーマ</label>
-              <div class="flex items-center gap-3">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-3">
+                <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">外観モード</label>
+                <select
+                  class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  bind:value={$colorMode}
+                >
+                  <option value="system">システム同期</option>
+                  <option value="light">ライトモード</option>
+                  <option value="dark">ダークモード</option>
+                </select>
+              </div>
+
+              <div class="space-y-3">
+                <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">テーマカラー</label>
+                <div class="flex items-center gap-3">
                 <input
                   type="color"
                   value={$customColor || presetColors.find(p => p.class === $theme)?.value || "#475569"}
@@ -405,6 +453,7 @@
                     <option value={p.class}>{p.name}</option>
                   {/each}
                 </select>
+              </div>
               </div>
             </div>
 
