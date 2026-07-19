@@ -200,11 +200,12 @@
       unlisteners.push(await listen('tray-action-settings', () => openSettings()));
     };
 
-    setupTrayListeners();
+    let listenersReady = false;
+    setupTrayListeners().then(() => listenersReady = true);
 
     return () => {
       mediaQuery.removeEventListener("change", handleMediaChange);
-      unlisteners.forEach(unlisten => unlisten());
+      if (listenersReady) unlisteners.forEach(unlisten => unlisten());
     };
   });
 
@@ -508,6 +509,21 @@
               <div class="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <label class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">テーマカラー</label>
                 <div class="flex items-center gap-3 flex-1">
+                  <select
+                    class="flex h-8 w-[40%] items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    value={$theme}
+                    on:change={(e) => {
+                      theme.set(e.target.value);
+                      if (e.target.value !== 'theme-custom') {
+                        customColor.set("");
+                      }
+                    }}
+                  >
+                    {#each presetColors as preset}
+                      <option value={preset.class}>{preset.name}</option>
+                    {/each}
+                    <option value="theme-custom">Custom</option>
+                  </select>
                   <input
                     type="color"
                     value={$customColor || presetColors.find(p => p.class === $theme)?.value || "#475569"}
@@ -518,30 +534,6 @@
                     class="h-8 w-12 cursor-pointer rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] p-1 shrink-0 shadow-sm"
                     title="カスタムカラー"
                   />
-                  <div class="flex flex-wrap gap-1">
-                    {#each presetColors as preset}
-                      <button
-                        on:click={() => { theme.set(preset.class); customColor.set(""); }}
-                        class="h-4 w-4 rounded-full border border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-transform hover:scale-110 {$theme === preset.class && !$customColor ? 'ring-2 ring-slate-950 dark:ring-slate-50 ring-offset-1 ring-offset-white dark:ring-offset-[#09090b]' : ''}"
-                        style="background-color: {preset.value}"
-                        title={preset.name}
-                      ></button>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Classification Rules Section -->
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">分類ルール</span>
-                <div class="flex gap-2">
-                  <label class="cursor-pointer inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">
-                    インポート
-                    <input type="file" accept=".json" class="hidden" on:change={importRules} />
-                  </label>
-                  <button on:click={exportRules} class="inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 h-6 px-2">エクスポート</button>
                 </div>
               </div>
               <div class="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#09090b] p-3">
