@@ -3,6 +3,7 @@ pub mod state;
 pub mod utils;
 pub mod setup;
 pub mod commands;
+pub mod tray;
 
 use state::AppState;
 use setup::setup;

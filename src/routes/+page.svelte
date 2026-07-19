@@ -1,5 +1,6 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
       import { sendNotification } from "@tauri-apps/plugin-notification";
   import { ask, message, open } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
@@ -180,7 +181,26 @@
     };
     applyThemeMode();
     mediaQuery.addEventListener("change", handleMediaChange);
-    return () => mediaQuery.removeEventListener("change", handleMediaChange);
+
+    const unlisteners = [];
+
+    // Tray event listeners
+    const setupTrayListeners = async () => {
+      unlisteners.push(await listen('tray-action-delete', () => handleDelete()));
+      unlisteners.push(await listen('tray-action-organize', () => handleOrganize()));
+      unlisteners.push(await listen('tray-action-classify', () => handleClassify()));
+      unlisteners.push(await listen('tray-action-today', () => showTodayModal = true));
+      unlisteners.push(await listen('tray-action-empty', () => handleEmptyRecycleBin()));
+      unlisteners.push(await listen('tray-action-duplicates', () => handleDeleteDuplicates()));
+      unlisteners.push(await listen('tray-action-settings', () => openSettings()));
+    };
+
+    setupTrayListeners();
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+      unlisteners.forEach(unlisten => unlisten());
+    };
   });
 
   function formatSize(bytes) {
