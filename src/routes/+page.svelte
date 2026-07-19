@@ -316,7 +316,7 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-4">
             <!-- Desktop Organization Group -->
               <button
                 on:click={handleDelete}
@@ -359,7 +359,7 @@
             </div>
 
             <!-- Maintenance Group -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-4">
               <button
                 on:click={handleDeleteDuplicates}
                 class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-3"
