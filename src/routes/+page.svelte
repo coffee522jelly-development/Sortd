@@ -411,7 +411,7 @@
                   id="prefix"
                   type="text"
                   bind:value={$prefix}
-                  class="flex h-8 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
+                  class="flex h-8 w-1/5 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
                 />
               </div>
               <div class="space-y-2">
@@ -420,7 +420,7 @@
                   id="todayPrefix"
                   type="text"
                   bind:value={$todayPrefix}
-                  class="flex h-8 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
+                  class="flex h-8 w-1/5 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-center font-bold"
                 />
               </div>
             </div>
