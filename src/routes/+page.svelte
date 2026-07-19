@@ -404,7 +404,7 @@
           </div>
 
           <div class="space-y-6">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-4">
               <div class="space-y-2">
                 <label for="prefix" class="text-[9px] font-medium text-slate-500 uppercase tracking-wider">整理接頭辞</label>
                 <input
@@ -425,7 +425,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-4">
               <div class="space-y-3">
                 <label class="text-[10px] font-medium leading-none text-slate-500 uppercase tracking-wider">外観モード</label>
                 <select
