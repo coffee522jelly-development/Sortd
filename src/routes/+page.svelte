@@ -47,6 +47,28 @@
     }
   }
 
+
+  function updateRuleName(index, event) {
+    const val = event.target.value.trim();
+    if (val) {
+      customRules.update(rules => {
+        rules[index].name = val;
+        return rules;
+      });
+    }
+  }
+
+  function updateRuleExts(index, event) {
+    const val = event.target.value.trim();
+    if (val) {
+      const exts = val.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+      customRules.update(rules => {
+        rules[index].extensions = exts;
+        return rules;
+      });
+    }
+  }
+
   function removeCustomRule(index) {
     customRules.update(rules => rules.filter((_, i) => i !== index));
   }
@@ -91,6 +113,20 @@
   let previewItems = [];
   let onPreviewConfirm = () => {};
   let status = "待機中";
+  let contextMenu = { show: false, x: 0, y: 0 };
+
+  function handleContextMenu(e) {
+    e.preventDefault();
+    contextMenu = {
+      show: true,
+      x: e.clientX,
+      y: e.clientY
+    };
+  }
+
+  function closeContextMenu() {
+    contextMenu.show = false;
+  }
 
   async function openSettings() {
     showSettings = true;
@@ -280,8 +316,9 @@
   }
 </script>
 
+<svelte:window on:click={closeContextMenu} />
 <div class={$theme} style={$customColor ? `--theme-primary: ${$customColor}; --theme-primary-hover: ${$customColor}dd;` : ""}>
-  <main class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
+  <main on:contextmenu={handleContextMenu} class="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
     <div class="max-w-[960px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
@@ -502,8 +539,8 @@
                   {/if}
                   {#each $customRules as rule, i}
                     <div class="flex items-center gap-2 group">
-                      <p class="w-1/3 text-[9px] font-bold truncate text-slate-700 dark:text-slate-300" title={rule.name}>{rule.name}</p>
-                      <p class="flex-1 text-[9px] truncate text-slate-500 font-mono" title={rule.extensions.join(', ')}>{rule.extensions.join(', ')}</p>
+                      <input type="text" class="w-1/3 text-[9px] font-bold truncate text-slate-700 dark:text-slate-300 bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-slate-400 dark:focus:border-slate-600 focus:outline-none rounded px-1" value={rule.name} on:change={(e) => updateRuleName(i, e)} title={rule.name} />
+                      <input type="text" class="flex-1 text-[9px] truncate text-slate-500 font-mono bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-slate-400 dark:focus:border-slate-600 focus:outline-none rounded px-1" value={rule.extensions.join(', ')} on:change={(e) => updateRuleExts(i, e)} title={rule.extensions.join(', ')} />
                       <button on:click={() => removeCustomRule(i)} class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 h-5 w-5">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                       </button>
@@ -534,6 +571,51 @@
         {/if}
       </div>
     </div>
+
+
+    {#if contextMenu.show && !showSettings}
+      <div
+        class="fixed z-50 min-w-[200px] overflow-hidden rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] p-1 text-slate-950 dark:text-slate-50 shadow-md animate-in fade-in zoom-in-95 duration-100"
+        style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+      >
+        <button on:click={handleDelete} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2 text-rose-600 dark:text-rose-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+          一括削除
+        </button>
+        <button on:click={handleOrganize} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2 text-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>
+          拡張子ごとに整理
+        </button>
+        <button on:click={handleClassify} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          内容で分類
+        </button>
+        <button on:click={() => showTodayModal = true} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+          今日のファイルを整理
+        </button>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
+        <button on:click={handleEmptyRecycleBin} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+          ゴミ箱を空にする
+        </button>
+        <button on:click={handleDeleteDuplicates} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2 text-rose-600 dark:text-rose-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
+          重複ファイルを削除
+        </button>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
+        <button on:click={handleUndo} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+          元に戻す
+        </button>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
+        <button on:click={openSettings} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          設定
+        </button>
+      </div>
+    {/if}
+
 
     <!-- Today's File Organization Modal -->
     <!-- Operation Preview Modal -->
