@@ -344,8 +344,8 @@
 
 <svelte:window on:click={closeContextMenu} />
 <div class={$theme} style={$customColor ? `--theme-primary: ${$customColor}; --theme-primary-hover: ${$customColor}dd;` : ""}>
-  <main on:contextmenu={handleContextMenu} class="min-h-screen no-scrollbar overflow-hidden bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
-    <div class="max-w-[960px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
+  <main on:contextmenu={handleContextMenu} class="h-screen w-screen no-scrollbar overflow-hidden bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 text-slate-950 dark:text-slate-50 font-sans selection:bg-primary/20 text-xs relative">
+    <div class="max-w-[900px] w-full bg-white dark:bg-[#09090b] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 transition-all">
       <div class="p-6 space-y-6">
 
         {#if !showSettings}

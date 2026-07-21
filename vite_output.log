@@ -1,0 +1,33 @@
+
+> sortd@1.0.0 dev
+> vite
+
+Forced re-optimization of dependencies
+
+  VITE v5.4.21  ready in 724 ms
+
+  ➜  Local:   http://localhost:1420/
+  ➜  Network: http://192.168.0.2:1420/
+5:52:12 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:498:16 A11y: A form label must be associated with a control.
+5:52:12 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:510:16 A11y: A form label must be associated with a control.
+5:52:12 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:678:12 A11y: Avoid using autofocus
+5:52:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:498:16 A11y: A form label must be associated with a control.
+5:52:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:510:16 A11y: A form label must be associated with a control.
+5:52:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:678:12 A11y: Avoid using autofocus
+3:54:25 AM [vite] hmr update /src/routes/+page.svelte, /src/app.css
+3:54:53 AM [vite] page reload .svelte-kit/generated/client/nodes/0.js
+3:54:53 AM [vite] page reload .svelte-kit/generated/client/nodes/1.js
+3:54:53 AM [vite] page reload .svelte-kit/generated/client/nodes/2.js
+3:54:53 AM [vite] page reload .svelte-kit/generated/client/app.js
+3:54:53 AM [vite] page reload .svelte-kit/generated/client/matchers.js
+3:54:53 AM [vite] page reload .svelte-kit/generated/server/internal.js
+3:55:00 AM [vite] page reload build/index.html
+3:55:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:498:16 A11y: A form label must be associated with a control.
+3:55:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:510:16 A11y: A form label must be associated with a control.
+3:55:14 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:678:12 A11y: Avoid using autofocus
+3:55:15 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:498:16 A11y: A form label must be associated with a control.
+3:55:15 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:510:16 A11y: A form label must be associated with a control.
+3:55:15 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:678:12 A11y: Avoid using autofocus
+3:55:16 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:498:16 A11y: A form label must be associated with a control.
+3:55:16 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:510:16 A11y: A form label must be associated with a control.
+3:55:16 AM [vite-plugin-svelte] /app/src/routes/+page.svelte:678:12 A11y: Avoid using autofocus
