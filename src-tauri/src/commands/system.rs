@@ -1,4 +1,5 @@
 use std::fs;
+#[allow(unused_imports)]
 use std::process::Command;
 use regex::Regex;
 use tauri::State;
