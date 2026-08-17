@@ -6,6 +6,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::er
     let delete_i = MenuItem::with_id(app, "delete", "一括削除", true, None::<&str>)?;
     let organize_i = MenuItem::with_id(app, "organize", "拡張子ごとに整理", true, None::<&str>)?;
     let classify_i = MenuItem::with_id(app, "classify", "内容で分類", true, None::<&str>)?;
+    let ai_organize_i = MenuItem::with_id(app, "ai-organize", "AIで整理", true, None::<&str>)?;
     let today_i = MenuItem::with_id(app, "today", "今日のファイルを整理", true, None::<&str>)?;
     let empty_i = MenuItem::with_id(app, "empty", "ゴミ箱を空にする", true, None::<&str>)?;
     let duplicates_i = MenuItem::with_id(app, "duplicates", "重複ファイルを削除", true, None::<&str>)?;
@@ -14,7 +15,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::er
     let quit_i = MenuItem::with_id(app, "quit", "終了", true, None::<&str>)?;
 
     let menu = Menu::with_items(app, &[
-        &delete_i, &organize_i, &classify_i, &today_i, &empty_i, &duplicates_i,
+        &delete_i, &organize_i, &classify_i, &ai_organize_i, &today_i, &empty_i, &duplicates_i,
         &settings_i, &toggle_i, &quit_i
     ])?;
 

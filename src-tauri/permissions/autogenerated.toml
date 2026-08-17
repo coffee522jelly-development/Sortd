@@ -42,3 +42,18 @@ commands.allow = ["organize_today_files"]
 identifier = "allow-delete-duplicate-files"
 description = "Allows invoking the delete_duplicate_files command"
 commands.allow = ["delete_duplicate_files"]
+
+[[permission]]
+identifier = "allow-get-ai-models"
+description = "Allows invoking the get_ai_models command"
+commands.allow = ["get_ai_models"]
+
+[[permission]]
+identifier = "allow-get-ai-organization-preview"
+description = "Allows invoking the get_ai_organization_preview command"
+commands.allow = ["get_ai_organization_preview"]
+
+[[permission]]
+identifier = "allow-execute-ai-organization"
+description = "Allows invoking the execute_ai_organization command"
+commands.allow = ["execute_ai_organization"]

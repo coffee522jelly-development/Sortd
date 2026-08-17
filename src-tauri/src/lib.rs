@@ -10,6 +10,7 @@ use setup::setup;
 use commands::organize::*;
 use commands::preview::*;
 use commands::system::*;
+use commands::ai::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,7 +29,10 @@ pub fn run() {
             undo_last_operation,
             empty_recycle_bin,
             organize_today_files,
-            delete_duplicate_files
+            delete_duplicate_files,
+            get_ai_models,
+            get_ai_organization_preview,
+            execute_ai_organization
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

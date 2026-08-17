@@ -16,6 +16,9 @@
     "allow-empty-recycle-bin",
     "allow-organize-today-files",
     "allow-delete-duplicate-files",
+    "allow-get-ai-models",
+    "allow-get-ai-organization-preview",
+    "allow-execute-ai-organization",
     "notification:default",
     "dialog:default",
     "core:window:default"

@@ -1,7 +1,7 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
-      import { sendNotification } from "@tauri-apps/plugin-notification";
+  import { sendNotification } from "@tauri-apps/plugin-notification";
   import { ask, message, open } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
   import { persisted } from "svelte-persisted-store";
@@ -13,6 +13,11 @@
   let theme = persisted("sortd_theme", "theme-slate");
   let customColor = persisted("sortd_custom_color", "");
   let colorMode = persisted("sortd_color_mode", "system"); // "system", "light", "dark"
+
+  // AI Persistent settings
+  let aiProvider = persisted("sortd_ai_provider", "LM Studio");
+  let aiEndpoint = persisted("sortd_ai_endpoint", "http://localhost:1234/v1");
+  let aiModel = persisted("sortd_ai_model", "");
 
   const defaultRules = [
     { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
@@ -32,6 +37,13 @@
   let newRuleName = "";
   let newRuleExts = "";
 
+  // AI UI state
+  let availableAiModels = [];
+  let isFetchingModels = false;
+  let showAiPreviewModal = false;
+  let aiPreviewItems = [];
+  let isAiProcessing = false;
+
   function cycleColorMode() {
     if ($colorMode === "system") colorMode.set("light");
     else if ($colorMode === "light") colorMode.set("dark");
@@ -47,7 +59,6 @@
       newRuleExts = "";
     }
   }
-
 
   function updateRuleName(index, event) {
     const val = event.target.value.trim();
@@ -72,40 +83,6 @@
 
   function removeCustomRule(index) {
     customRules.update(rules => rules.filter((_, i) => i !== index));
-  }
-
-  function exportRules() {
-    const dataStr = JSON.stringify($customRules, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sortd_rules.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function importRules(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const rules = JSON.parse(e.target.result);
-        if (Array.isArray(rules)) {
-          customRules.set(rules);
-          await message("ルールをインポートしました。", { title: "Sortd", kind: "info" });
-        } else {
-          throw new Error("無効なフォーマットです");
-        }
-      } catch (err) {
-        await message(`インポートに失敗しました: ${err}`, { title: "Sortd", kind: "error" });
-      }
-      event.target.value = ''; // Reset input
-    };
-    reader.readAsText(file);
   }
 
   let todayFolderName = "";
@@ -194,6 +171,7 @@
       unlisteners.push(await listen('tray-action-delete', () => handleDelete()));
       unlisteners.push(await listen('tray-action-organize', () => handleOrganize()));
       unlisteners.push(await listen('tray-action-classify', () => handleClassify()));
+      unlisteners.push(await listen('tray-action-ai-organize', () => handleAiOrganize()));
       unlisteners.push(await listen('tray-action-today', () => showTodayModal = true));
       unlisteners.push(await listen('tray-action-empty', () => handleEmptyRecycleBin()));
       unlisteners.push(await listen('tray-action-duplicates', () => handleDeleteDuplicates()));
@@ -215,24 +193,6 @@
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  }
-
-  async function addExcludedItem(directory = true) {
-    try {
-      const selected = await open({
-        directory,
-        multiple: true,
-        title: directory ? "除外するフォルダを選択" : "除外するファイルを選択",
-      });
-      if (selected) {
-        const newPaths = Array.isArray(selected) ? selected : [selected];
-        excludedPaths.update(paths => [...new Set([...paths, ...newPaths])]);
-      }
-    } catch (err) { console.error(err); }
-  }
-
-  function removeExcludedItem(path) {
-    excludedPaths.update(paths => paths.filter(p => p !== path));
   }
 
   async function handleDelete() {
@@ -295,6 +255,66 @@
       };
       showPreviewModal = true;
     } catch (err) { status = `エラー: ${err}`; }
+  }
+
+  async function fetchAiModels() {
+    isFetchingModels = true;
+    try {
+      const models = await invoke("get_ai_models", { endpoint: $aiEndpoint });
+      availableAiModels = models.map(m => m.id);
+      if (availableAiModels.length > 0 && !$aiModel) {
+        aiModel.set(availableAiModels[0]);
+      }
+      await message(`モデル一覧を取得しました (${availableAiModels.length}件)`, { title: "Sortd", kind: "info" });
+    } catch (err) {
+      await message(`モデル取得エラー: ${err}`, { title: "Sortd", kind: "error" });
+    } finally {
+      isFetchingModels = false;
+    }
+  }
+
+  async function handleAiOrganize() {
+    try {
+      status = "AIで分析中...";
+      isAiProcessing = true;
+      const previews = await invoke("get_ai_organization_preview", {
+        endpoint: $aiEndpoint,
+        model: $aiModel,
+        excluded: $excludedPaths
+      });
+
+      if (previews.length === 0) {
+        await message("整理対象のファイル・フォルダはありませんでした。", { title: "Sortd", kind: "info" });
+        status = "整理不要";
+        return;
+      }
+
+      aiPreviewItems = previews;
+      showAiPreviewModal = true;
+      status = "AI整理案の確認";
+    } catch (err) {
+      status = `エラー: ${err}`;
+      await message(`AI整理エラー: ${err}`, { title: "Sortd", kind: "error" });
+    } finally {
+      isAiProcessing = false;
+    }
+  }
+
+  async function confirmAiOrganize() {
+    try {
+      showAiPreviewModal = false;
+      status = "AIで整理中...";
+      const count = await invoke("execute_ai_organization", {
+        items: aiPreviewItems,
+        excluded: $excludedPaths
+      });
+      status = `${count} 個のアイテムをAI分類で整理しました。`;
+      addHistory(status);
+      await sendNotification({ title: "Sortd", body: `AI整理完了: ${count} 個のファイル・フォルダを整理しました。` });
+    } catch (err) {
+      status = `エラー: ${err}`;
+      await message(`AI整理の実行に失敗しました: ${err}`, { title: "Sortd", kind: "error" });
+    }
   }
 
   async function handleOrganizeToday() {
@@ -365,7 +385,6 @@
             </button>
           </div>
 
-
           <div class="flex gap-6 h-[400px]">
             <!-- Left Panel: Action Buttons (Single Column) -->
             <div class="flex flex-col gap-2 w-[40%]">
@@ -392,6 +411,15 @@
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
                 <span class="truncate">内容で分類</span>
+              </button>
+
+              <button
+                on:click={handleAiOrganize}
+                disabled={isAiProcessing}
+                class="inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 w-full"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-90 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                <span class="truncate">AIで整理</span>
               </button>
 
               <button
@@ -451,7 +479,6 @@
             </div>
           </div>
 
-
           <!-- Status Bar -->
           <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
             <p class="text-[10px] text-center text-slate-500 dark:text-slate-400 font-medium">
@@ -468,7 +495,7 @@
             <div class="w-8"></div>
           </div>
 
-          <div class="space-y-6">
+          <div class="space-y-6 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
             <div class="space-y-4">
               <div class="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <label for="prefix" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">整理接頭辞</label>
@@ -493,10 +520,69 @@
               </div>
             </div>
 
+            <!-- AI Settings Section -->
+            <div class="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-500">AI整理設定 (LM Studio / OpenAI互換)</h3>
+              <div class="flex items-center gap-4">
+                <label for="aiProviderSelect" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">AI Provider</label>
+                <select
+                  id="aiProviderSelect"
+                  class="flex h-8 w-[40%] items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  bind:value={$aiProvider}
+                >
+                  <option value="LM Studio">LM Studio</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <label for="aiEndpointInput" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">Endpoint</label>
+                <input
+                  id="aiEndpointInput"
+                  type="text"
+                  bind:value={$aiEndpoint}
+                  placeholder="http://localhost:1234/v1"
+                  class="flex h-8 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
+                />
+              </div>
+
+              <div class="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <label for="aiModelInput" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">Model</label>
+                <div class="flex items-center gap-2 flex-1">
+                  {#if availableAiModels.length > 0}
+                    <select
+                      id="aiModelInput"
+                      class="flex h-8 flex-1 items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring font-mono"
+                      bind:value={$aiModel}
+                    >
+                      {#each availableAiModels as modelId}
+                        <option value={modelId}>{modelId}</option>
+                      {/each}
+                    </select>
+                  {:else}
+                    <input
+                      id="aiModelInput"
+                      type="text"
+                      bind:value={$aiModel}
+                      placeholder="例: Qwen3 4B"
+                      class="flex h-8 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
+                    />
+                  {/if}
+                  <button
+                    on:click={fetchAiModels}
+                    disabled={isFetchingModels}
+                    class="inline-flex items-center justify-center rounded-md text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 h-8 px-3 whitespace-nowrap"
+                  >
+                    {isFetchingModels ? '取得中...' : 'モデル取得'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="space-y-4 pt-2">
               <div class="flex items-center gap-4">
-                <label class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">外観モード</label>
+                <label for="colorModeSelect" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">外観モード</label>
                 <select
+                  id="colorModeSelect"
                   class="flex h-8 w-[30%] items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                   bind:value={$colorMode}
                 >
@@ -507,9 +593,10 @@
               </div>
 
               <div class="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <label class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">テーマカラー</label>
+                <label for="themeSelect" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">テーマカラー</label>
                 <div class="flex items-center gap-3 flex-1">
                   <select
+                    id="themeSelect"
                     class="flex h-8 w-[40%] items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                     value={$theme}
                     on:change={(e) => {
@@ -576,7 +663,6 @@
       </div>
     </div>
 
-
     {#if contextMenu.show && !showSettings}
       <div
         class="fixed z-50 min-w-[200px] overflow-hidden rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] p-1 text-slate-950 dark:text-slate-50 shadow-md animate-in fade-in zoom-in-95 duration-100"
@@ -593,6 +679,10 @@
         <button on:click={handleClassify} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
           内容で分類
+        </button>
+        <button on:click={handleAiOrganize} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2 text-amber-600 dark:text-amber-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          AIで整理
         </button>
         <button on:click={() => showTodayModal = true} class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-slate-100 dark:hover:bg-slate-800 w-full text-left gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
@@ -620,8 +710,53 @@
       </div>
     {/if}
 
+    <!-- AI Organization Preview Modal -->
+    {#if showAiPreviewModal}
+      <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-[#09090b] w-full max-w-[360px] max-h-[85vh] rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+          <div class="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <h3 class="text-[11px] font-bold tracking-tight flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              AIによる整理案のプレビュー
+            </h3>
+            <p class="text-[9px] text-slate-500 mt-0.5">以下の構成でフォルダ作成と移動が行われます</p>
+          </div>
 
-    <!-- Today's File Organization Modal -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            {#each aiPreviewItems as item}
+              <div class="flex flex-col p-2 bg-slate-50 dark:bg-slate-900/50 rounded border border-slate-100 dark:border-slate-800/50">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="text-[9px] font-semibold px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase shrink-0">
+                    {item.item_type === 'folder' ? 'フォルダ' : 'ファイル'}
+                  </span>
+                  <span class="text-[9px] font-mono truncate flex-1 text-slate-600 dark:text-slate-400">{item.item_name}</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 text-primary opacity-50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <span class="text-[9px] font-bold truncate text-primary">{item.target_path}</span>
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 shrink-0">
+            <button
+              on:click={() => showAiPreviewModal = false}
+              class="flex-1 h-8 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#09090b] text-[10px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              キャンセル
+            </button>
+            <button
+              on:click={confirmAiOrganize}
+              class="flex-1 h-8 rounded-md bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary-hover shadow-sm"
+            >
+              この構成で整理する
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <!-- Operation Preview Modal -->
     {#if showPreviewModal}
       <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -675,7 +810,6 @@
             bind:value={todayFolderName}
             placeholder="例: 会議資料"
             class="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            autofocus
             on:keydown={(e) => e.key === 'Enter' && handleOrganizeToday()}
           />
           <div class="flex gap-2">
@@ -700,13 +834,12 @@
 </div>
 
 <style>
-
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* Local overrides for theme dots in settings */
