@@ -9,14 +9,21 @@ use crate::utils::is_excluded;
 
 /// AIモデル一覧を取得するコマンド (LM Studio / OpenAI 互換)
 #[tauri::command]
-pub async fn get_ai_models(endpoint: String) -> Result<Vec<AiModelInfo>, String> {
+pub async fn get_ai_models(endpoint: String, api_key: String) -> Result<Vec<AiModelInfo>, String> {
     let url = format!("{}/models", endpoint.trim_end_matches('/'));
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
         .map_err(|e| format!("HTTPクライアント初期化エラー: {}", e))?;
 
+    let auth_token = if api_key.trim().is_empty() {
+        "lm-studio".to_string()
+    } else {
+        api_key.trim().to_string()
+    };
+
     let resp = client.get(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
         .send()
         .await
         .map_err(|e| format!("AIプロバイダへの接続に失敗しました ({}): {}", url, e))?;
@@ -45,6 +52,7 @@ pub async fn get_ai_models(endpoint: String) -> Result<Vec<AiModelInfo>, String>
 pub async fn get_ai_organization_preview(
     endpoint: String,
     model: String,
+    api_key: String,
     excluded: Vec<String>,
 ) -> Result<Vec<AiPreviewItem>, String> {
     let desktop = dirs::desktop_dir().ok_or("デスクトップディレクトリが見つかりません")?;
@@ -125,7 +133,14 @@ STRICT RULES:
         .build()
         .map_err(|e| format!("HTTPクライアント初期化エラー: {}", e))?;
 
+    let auth_token = if api_key.trim().is_empty() {
+        "lm-studio".to_string()
+    } else {
+        api_key.trim().to_string()
+    };
+
     let resp = client.post(&url)
+        .header("Authorization", format!("Bearer {}", auth_token))
         .json(&payload)
         .send()
         .await

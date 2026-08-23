@@ -18,6 +18,7 @@
   let aiProvider = persisted("sortd_ai_provider", "LM Studio");
   let aiEndpoint = persisted("sortd_ai_endpoint", "http://localhost:1234/v1");
   let aiModel = persisted("sortd_ai_model", "");
+  let aiApiKey = persisted("sortd_ai_api_key", "lm-studio");
 
   const defaultRules = [
     { name: "WebProject", extensions: ["html", "htm", "css", "js", "ts", "jsx", "tsx", "php", "vue", "scss"] },
@@ -260,7 +261,7 @@
   async function fetchAiModels() {
     isFetchingModels = true;
     try {
-      const models = await invoke("get_ai_models", { endpoint: $aiEndpoint });
+      const models = await invoke("get_ai_models", { endpoint: $aiEndpoint, apiKey: $aiApiKey });
       availableAiModels = models.map(m => m.id);
       if (availableAiModels.length > 0 && !$aiModel) {
         aiModel.set(availableAiModels[0]);
@@ -280,6 +281,7 @@
       const previews = await invoke("get_ai_organization_preview", {
         endpoint: $aiEndpoint,
         model: $aiModel,
+        apiKey: $aiApiKey,
         excluded: $excludedPaths
       });
 
@@ -541,6 +543,17 @@
                   type="text"
                   bind:value={$aiEndpoint}
                   placeholder="http://localhost:1234/v1"
+                  class="flex h-8 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
+                />
+              </div>
+
+              <div class="flex items-center gap-4">
+                <label for="aiApiKeyInput" class="text-[10px] font-medium text-slate-500 uppercase tracking-wider w-1/4">API Key</label>
+                <input
+                  id="aiApiKeyInput"
+                  type="password"
+                  bind:value={$aiApiKey}
+                  placeholder="lm-studio"
                   class="flex h-8 flex-1 rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
                 />
               </div>
